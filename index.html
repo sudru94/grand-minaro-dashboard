@@ -291,7 +291,15 @@ table.gm td:first-child{text-align:left;}
   .search input,.search input:focus{width:100%;}
   .chart-host{height:300px;padding:12px 0 0;}
   .tbl-scroll{-webkit-overflow-scrolling:touch;}
-}
+  /* collapse the wrapping period pills into a single swipeable row to save vertical space */
+  .period-bar{flex-wrap:nowrap;gap:10px;}
+  .pills{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+    min-width:0;scroll-snap-type:x proximity;scrollbar-width:none;
+    -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 26px),transparent);
+    mask-image:linear-gradient(to right,#000 calc(100% - 26px),transparent);}
+  .pills::-webkit-scrollbar{display:none;}
+  .pills .pill{flex:0 0 auto;scroll-snap-align:start;}
+  .period-lbl{flex-shrink:0;}
 @media(max-width:560px){
   .wrap{padding:0 14px;}
   .kpi-grid{grid-template-columns:1fr;}
