@@ -129,9 +129,15 @@ function App() {
   const cats = window.categoryAggregates(campaigns, sel);
   const acc = t.accent === "green" ? "#36b277" : "#E8AE3C";
 
+  // date range + month count derived from live data so copy never goes stale
+  const monthCount = summary.length;
+  const firstMonth = monthCount ? summary[0].month : "";
+  const lastMonth = monthCount ? summary[monthCount - 1].month : "";
+  const rangeLabel = firstMonth && lastMonth ? firstMonth + " ▸ " + lastMonth : "";
+
   const heroTitle = sel === "All Time" ? "The full campaign story, end to end." : sel + " — performance in focus.";
   const heroSub = sel === "All Time"
-    ? "Ten months of Meta advertising for Grand Minaro — every rupee of spend, every conversation started, mapped across rooms, couple retreats and weddings."
+    ? monthCount + " months of Meta advertising for Grand Minaro — every rupee of spend, every conversation started, mapped across rooms, couple retreats and weddings."
     : "Filtered to " + sel + ". KPIs compare against the prior month; the trajectory chart highlights this period in context.";
 
   return (
@@ -177,14 +183,14 @@ function App() {
       <main className="wrap fade-in">
         {/* hero */}
         <section className="hero">
-          <div className="hero-eyebrow">Meta Ads Intelligence · Aug 2025 ▸ May 2026 · LKR</div>
+          <div className="hero-eyebrow">Meta Ads Intelligence · {rangeLabel} · LKR</div>
           <div className="hero-row">
             <div>
               <h1 className="hero-title" dangerouslySetInnerHTML={{ __html: heroTitle.replace("Grand Minaro", "<em>Grand Minaro</em>") }}></h1>
               <p className="hero-sub">{heroSub}</p>
             </div>
             <div className="hero-stat">
-              <div className="hs-label">{sel === "All Time" ? "Total Spend · 10 Months" : sel + " Spend"}</div>
+              <div className="hs-label">{sel === "All Time" ? "Total Spend · " + monthCount + " Months" : sel + " Spend"}</div>
               <div className="hs-val"><span className="pfx">LKR</span>{G.formatLKR(k.spend, true).replace("LKR ", "")}</div>
               <div className="hs-meta">{k.chats.toLocaleString()} chats started · {G.fmtNum(k.reach)} reached</div>
             </div>

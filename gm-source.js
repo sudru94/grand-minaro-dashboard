@@ -1,30 +1,19 @@
 /* Grand Minaro — live Google Sheets data source.
-   Reads the published spreadsheet (Monthly Summary + 10 monthly campaign tabs)
-   via the gviz CSV endpoint, which is CORS-enabled for link-viewable sheets.
-   Exposes window.fetchLiveData() -> Promise<{ monthly, campaigns, tabs, at }>.
+   Reads the published spreadsheet via the gviz CSV endpoint (CORS-enabled for
+   link-viewable sheets). Auto-discovers months from the Monthly Summary tab and
+   fetches each month's campaign tab BY NAME — so newly added months (e.g. the
+   current month-to-date) flow in automatically with no code change.
+   Exposes window.fetchLiveData() -> Promise<{ monthly, campaigns, totals, tabs, at }>.
    gm-data.js stays loaded as an offline fallback snapshot. */
 (function () {
   var SHEET_ID = "1kxG_5NN9wG3BJTrarOJjD66nz-2gX7ByPOc5CV1dow0";
-  var SUMMARY_GID = "282783909";
+  var SUMMARY_GID = "282783909"; // "Monthly Summary" tab (stable gid)
 
-  // gid -> month label, in chronological order (matches the sheet tabs)
-  var MONTH_TABS = [
-    { month: "Aug 2025", gid: "2079107181" },
-    { month: "Sep 2025", gid: "1857755795" },
-    { month: "Oct 2025", gid: "756992376" },
-    { month: "Nov 2025", gid: "100729649" },
-    { month: "Dec 2025", gid: "304225380" },
-    { month: "Jan 2026", gid: "1864239759" },
-    { month: "Feb 2026", gid: "1294466495" },
-    { month: "Mar 2026", gid: "1388647459" },
-    { month: "Apr 2026", gid: "295500893" },
-    { month: "May 2026", gid: "1518451156" }
-  ];
+  var BASE = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv";
 
-  function url(gid) {
-    return "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
-      "/gviz/tq?tqx=out:csv&gid=" + gid + "&_=" + Date.now();
-  }
+  function gidUrl(gid) { return BASE + "&gid=" + gid + "&_=" + Date.now(); }
+  // monthly campaign tabs are named exactly like the summary labels ("Aug 2025", "Jun 2026", …)
+  function nameUrl(name) { return BASE + "&sheet=" + encodeURIComponent(name) + "&_=" + Date.now(); }
 
   // RFC-4180-ish CSV parser -> array of rows (arrays of strings)
   function parseCSV(text) {
@@ -108,38 +97,39 @@
     return out;
   }
 
-  function fetchCSV(gid) {
-    return fetch(url(gid), { cache: "no-store" }).then(function (r) {
-      if (!r.ok) throw new Error("HTTP " + r.status + " (gid " + gid + ")");
+  function fetchRows(u) {
+    return fetch(u, { cache: "no-store" }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
       return r.text();
     }).then(parseCSV);
   }
 
   function fetchLiveData() {
-    var jobs = [fetchCSV(SUMMARY_GID)];
-    MONTH_TABS.forEach(function (t) {
-      jobs.push(fetchCSV(t.gid).then(function (rows) { return parseCampaigns(rows, t.month); }));
-    });
-    return Promise.all(jobs).then(function (res) {
-      var summaryRows = res[0];
-      var order = {};
-      MONTH_TABS.forEach(function (t, i) { order[t.month] = i; });
-      var monthly = parseSummary(summaryRows).sort(function (a, b) {
-        var ai = order[a.month] == null ? 99 : order[a.month];
-        var bi = order[b.month] == null ? 99 : order[b.month];
-        return ai - bi;
-      });
+    // 1) read the Summary tab to discover which months exist
+    return fetchRows(gidUrl(SUMMARY_GID)).then(function (summaryRows) {
+      var monthly = parseSummary(summaryRows);     // chronological, as in the sheet
       var totals = parseTotals(summaryRows);
-      var campaigns = [];
-      for (var i = 1; i < res.length; i++) campaigns = campaigns.concat(res[i]);
-      return { monthly: monthly, campaigns: campaigns, totals: totals, tabs: MONTH_TABS.length + 1, at: Date.now() };
+      var months = monthly.map(function (m) { return m.month; });
+
+      // 2) fetch each month's campaign tab by name (auto-discovered). A missing or
+      //    renamed tab fails soft (that month simply contributes no campaign rows).
+      var jobs = months.map(function (name) {
+        return fetchRows(nameUrl(name))
+          .then(function (rows) { return parseCampaigns(rows, name); })
+          .catch(function () { return []; });
+      });
+
+      return Promise.all(jobs).then(function (perMonth) {
+        var campaigns = [];
+        perMonth.forEach(function (list) { campaigns = campaigns.concat(list); });
+        return { monthly: monthly, campaigns: campaigns, totals: totals, tabs: months.length + 1, at: Date.now() };
+      });
     });
   }
 
   window.GM_SHEET = {
     id: SHEET_ID,
     summaryGid: SUMMARY_GID,
-    monthTabs: MONTH_TABS,
     editUrl: "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit"
   };
   window.fetchLiveData = fetchLiveData;
