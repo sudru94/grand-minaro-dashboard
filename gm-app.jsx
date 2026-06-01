@@ -264,7 +264,7 @@ function App() {
             </div>
             <div>
               <h4 className="foot-h">Live Google Sheets</h4>
-              <p className="foot-p">This dashboard reads a published spreadsheet across 11 monthly tabs. Edit rows or publish new tabs, then refresh to watch every chart, KPI and ledger update in place.</p>
+              <p className="foot-p">This dashboard reads a published spreadsheet — a Monthly Summary plus one tab per month{sync.tabs ? " (" + sync.tabs + " tabs)" : ""}. Add a new month tab, then refresh to watch every chart, KPI and ledger update in place.</p>
             </div>
           </div>
           <div className="foot-bottom">
