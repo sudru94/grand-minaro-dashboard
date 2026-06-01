@@ -100,7 +100,7 @@ function TrendsChart(props) {
           <h2 className="panel-title"><span className="tick"></span>Performance &amp; Spend Trajectory</h2>
           <div className="panel-sub">Monthly trajectory · Aug 2025 – May 2026 · {selectedMonth === "All Time" ? "full account history" : selectedMonth + " highlighted"}</div>
         </div>
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div className="chart-controls" style={{ display: "flex", gap: "12px" }}>
           <div>
             <label className="field-lbl">Primary</label>
             <select className="sel" value={metric} onChange={function (e) { setMetric(e.target.value); }}>
