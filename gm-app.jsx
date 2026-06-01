@@ -190,7 +190,7 @@ function App() {
             </div>
           </div>
 
-          {/* period filter */}
+          {/* period filter — pills on desktop, compact dropdown on small screens */}
           <div className="period-bar">
             <span className="period-lbl">Period</span>
             <div className="pills">
@@ -198,6 +198,9 @@ function App() {
                 return <button key={m} className={"pill" + (m === "All Time" ? " all" : "") + (sel === m ? " active" : "")} onClick={function () { setSel(m); }}>{m}</button>;
               })}
             </div>
+            <select className="sel period-select" value={sel} onChange={function (e) { setSel(e.target.value); }} aria-label="Select period">
+              {months.map(function (m) { return <option key={m} value={m}>{m}</option>; })}
+            </select>
           </div>
         </section>
 
