@@ -63,17 +63,31 @@ function TrendsChart(props) {
     return height - pad.b - r * h;
   };
 
+  // detect the in-progress (month-to-date) point: the last point whose label is the
+  // current calendar month. Auto-updates monthly; stays solid if the sheet lags behind.
+  const nowLabel = (function () { const d = new Date(); return d.toLocaleString("en-US", { month: "short" }) + " " + d.getFullYear(); })();
+  const hasMTD = pts.length > 1 && pts[pts.length - 1].label === nowLabel;
+  const mtdIdx = hasMTD ? pts.length - 1 : -1;
+  const solidEnd = hasMTD ? pts.length - 1 : pts.length; // solid line/area cover [0 .. solidEnd-1]
+
   let area = "", line = "", oline = "";
-  pts.forEach(function (p, i) {
-    const x = X(i), y = Y(p.p, pMax, pMin);
+  for (let i = 0; i < solidEnd; i++) {
+    const p = pts[i], x = X(i), y = Y(p.p, pMax, pMin);
     area += (i === 0 ? "M " + x + " " + (height - pad.b) + " L " + x + " " + y : " L " + x + " " + y);
     line += (i === 0 ? "M " + x + " " + y : " L " + x + " " + y);
-    if (i === pts.length - 1) area += " L " + x + " " + (height - pad.b) + " Z";
+    if (i === solidEnd - 1) area += " L " + x + " " + (height - pad.b) + " Z";
     if (overlay !== "none") {
       const ys = Y(p.s, sMax, sMin);
       oline += (i === 0 ? "M " + x + " " + ys : " L " + x + " " + ys);
     }
-  });
+  }
+  // dashed connector from the last completed month into the in-progress (MTD) point
+  let mtdLine = "", mtdOline = "";
+  if (hasMTD) {
+    const a = solidEnd - 1, b = mtdIdx;
+    mtdLine = "M " + X(a) + " " + Y(pts[a].p, pMax, pMin) + " L " + X(b) + " " + Y(pts[b].p, pMax, pMin);
+    if (overlay !== "none") mtdOline = "M " + X(a) + " " + Y(pts[a].s, sMax, sMin) + " L " + X(b) + " " + Y(pts[b].s, sMax, sMin);
+  }
 
   const ticks = 5;
   const grid = Array.from({ length: ticks }).map(function (_, i) {
@@ -156,8 +170,18 @@ function TrendsChart(props) {
           <path d={line} fill="none" stroke={accHex} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
           {overlay !== "none" && <path d={oline} fill="none" stroke="#36b277" strokeWidth="1.9" strokeDasharray="5 4" strokeLinecap="round" strokeLinejoin="round" />}
 
+          {/* in-progress (month-to-date) tail: dashed + clearly marked so the partial month doesn't read as a crash */}
+          {hasMTD && (
+            <g>
+              {overlay !== "none" && mtdOline && <path d={mtdOline} fill="none" stroke="#36b277" strokeWidth="1.7" strokeDasharray="3 4" strokeLinecap="round" opacity="0.55" />}
+              <path d={mtdLine} fill="none" stroke={accHex} strokeWidth="2.4" strokeDasharray="2 4" strokeLinecap="round" opacity="0.7" />
+              <circle cx={X(mtdIdx)} cy={Y(pts[mtdIdx].p, pMax, pMin)} r="4" fill="var(--bg-1)" stroke={accHex} strokeWidth="2.4" opacity="0.95" />
+              <text x={X(mtdIdx)} y={Y(pts[mtdIdx].p, pMax, pMin) - 11} textAnchor="middle" fill={accHex} fontSize="8.5" fontWeight="700" fontFamily="JetBrains Mono" letterSpacing="0.5">MTD</text>
+            </g>
+          )}
+
           {pts.map(function (p, i) {
-            return <text key={i} x={X(i)} y={height - pad.b + 20} textAnchor="middle" fill="#7c8fa0" fontSize="10" fontWeight="700">{p.label.split(" ")[0]}</text>;
+            return <text key={i} x={X(i)} y={height - pad.b + 20} textAnchor="middle" fill={i === mtdIdx ? accHex : "#7c8fa0"} fontSize="10" fontWeight="700">{p.label.split(" ")[0]}</text>;
           })}
 
           {act != null && (
@@ -171,7 +195,7 @@ function TrendsChart(props) {
 
         {hi != null && (
           <div className="tip" style={{ left: Math.min(width - 190, Math.max(8, X(hi) - 86)) + "px", top: Math.max(6, Y(pts[hi].p, pMax, pMin) - 120) + "px" }}>
-            <div className="tip-h"><span>{pts[hi].label}</span>{pts[hi].label === selectedMonth && <span className="daychip">SELECTED</span>}</div>
+            <div className="tip-h"><span>{pts[hi].label}</span>{hi === mtdIdx ? <span className="daychip">MTD</span> : (pts[hi].label === selectedMonth && <span className="daychip">SELECTED</span>)}</div>
             <div className="tip-row"><span className="k">{METRIC_META[metric].name}</span><span className="v" style={{ color: accHex }}>{METRIC_META[metric].fmt(pts[hi].p)}</span></div>
             {overlay !== "none" && <div className="tip-row"><span className="k">{METRIC_META[overlay].name}</span><span className="v" style={{ color: "#36b277" }}>{METRIC_META[overlay].fmt(pts[hi].s)}</span></div>}
             <div className="tip-foot">
