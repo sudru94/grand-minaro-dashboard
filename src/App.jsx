@@ -4,6 +4,7 @@ import { formatLKR, fmtNum, Sparkline, TrendChip } from "./gm-core.jsx";
 import { TrendsChart, CategorySplit } from "./gm-charts.jsx";
 import { Diagnostics, BudgetPlanner, categoryAggregates } from "./gm-insights.jsx";
 import { CampaignTable } from "./gm-table.jsx";
+import { ActiveCampaigns, TopCampaign } from "./gm-highlights.jsx";
 import { fetchLiveData, loadCachedData, GM_SHEET } from "./gm-source.js";
 import monoSrc from "../assets/gm-monogram.png";
 
@@ -192,7 +193,7 @@ export default function App() {
           <div className="hero-eyebrow">Meta Ads Intelligence · {rangeLabel} · LKR</div>
           <div className="hero-row">
             <div>
-              <h1 className="hero-title" dangerouslySetInnerHTML={{ __html: heroTitle.replace("Grand Minaro", "<em>Grand Minaro</em>") }}></h1>
+              <h1 className="hero-title">{heroTitle}</h1>
               <p className="hero-sub">{heroSub}</p>
             </div>
             <div className="hero-stat">
@@ -231,6 +232,12 @@ export default function App() {
           <KPICard label="CTR · Link Clicks" tone="var(--accent)" ico={IC.ctr}
             value={k.ctr.toFixed(2) + "%"} sub={k.startRate.toFixed(1) + "% chat-start rate"} subSmall={fmtNum(k.clicks) + " clicks"}
             spark={{ data: k.s_ctr, color: acc }} />
+        </section>
+
+        {/* active campaigns + top performer */}
+        <section className="split">
+          <ActiveCampaigns campaigns={campaigns} />
+          <TopCampaign campaigns={campaigns} selectedMonth={sel} />
         </section>
 
         {/* trends + donut */}

@@ -180,6 +180,34 @@ body.gm-loading .hs-val{animation:gmLoad 1.3s ease-in-out infinite;}
 .cat-row .cc{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-faint);white-space:nowrap;}
 .cat-row>div{min-width:74px;}
 
+/* ---------- highlights: active campaigns + top campaign ---------- */
+.ac-list{display:flex;flex-direction:column;flex:1;max-height:340px;overflow-y:auto;}
+.ac-row{display:flex;align-items:center;gap:13px;padding:12px 20px;border-top:1px solid var(--line);}
+.ac-row:first-child{border-top:none;}
+.ac-row:hover{background:var(--bg-2);}
+.ac-row .an{flex:1;min-width:0;}
+.ac-row .nm{font-weight:700;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ac-stats{display:flex;gap:18px;white-space:nowrap;}
+.ac-stats .st{text-align:right;min-width:72px;font-family:"JetBrains Mono",monospace;font-size:11.5px;}
+.ac-stats .lb,.spot-cell .lb,.runners .lb{display:block;font-family:"JetBrains Mono",monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;}
+.ac-stats b{color:var(--ink);font-weight:700;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 3px rgba(54,178,119,.16);flex-shrink:0;animation:pulse 2.4s infinite;}
+.ac-empty{padding:26px 22px;font-size:12.5px;color:var(--ink-faint);line-height:1.6;}
+.spot{display:flex;flex-direction:column;flex:1;padding:18px 20px;}
+.spot-crown{font-size:26px;line-height:1;margin-bottom:10px;}
+.spot-name{font-family:"Marcellus",serif;font-size:20px;letter-spacing:.01em;color:var(--ink);line-height:1.25;}
+.spot-months{font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--ink-faint);font-weight:600;}
+.spot-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px;}
+.spot-cell{background:var(--bg-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;}
+.spot-cell b{display:block;font-family:"JetBrains Mono",monospace;font-size:14.5px;font-weight:700;color:var(--ink);margin-top:4px;}
+.spot-cell small{display:block;font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:700;margin-top:2px;}
+.spot-cell small.good{color:var(--emerald);} .spot-cell small.bad{color:#e3756b;}
+.runners{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
+.run-row{display:flex;align-items:center;gap:9px;margin-top:8px;font-size:11.5px;}
+.run-row .rk{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:700;color:var(--accent-bright);flex-shrink:0;}
+.run-row .rn{flex:1;min-width:0;font-weight:600;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.run-row .rv{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-faint);white-space:nowrap;}
+
 /* ---------- insights ---------- */
 .finding{display:flex;gap:11px;padding:13px 14px;border-radius:13px;border:1px solid var(--line);background:var(--bg-2);}
 .finding .fi{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;font-size:13px;}
@@ -323,4 +351,8 @@ table.gm td:first-child{text-align:left;}
   table.gm th,table.gm td{padding:11px 12px;}
   .pager{justify-content:center;}
   .foot-bottom{flex-direction:column;align-items:flex-start;}
+  /* active list: drop the cost/chat column so rows fit */
+  .ac-stats .ac-cpa{display:none;}
+  .ac-stats .st{min-width:58px;}
+  .ac-row{padding:12px 14px;gap:10px;}
 }
