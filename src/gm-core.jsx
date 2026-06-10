@@ -1,7 +1,7 @@
-/* Grand Minaro — shared helpers + visual atoms. Exposes window.GM and atom components. */
+/* Grand Minaro — shared helpers + visual atoms. */
 
 // ---------- formatting ----------
-function formatLKR(n, compact) {
+export function formatLKR(n, compact) {
   if (n == null || isNaN(n)) return "—";
   if (compact && Math.abs(n) >= 1000) {
     if (Math.abs(n) >= 1e6) return "LKR " + (n / 1e6).toFixed(2) + "M";
@@ -9,7 +9,7 @@ function formatLKR(n, compact) {
   }
   return "LKR " + Math.round(n).toLocaleString("en-US");
 }
-function fmtNum(n, compact) {
+export function fmtNum(n, compact) {
   if (n == null || isNaN(n)) return "—";
   if (compact !== false) {
     if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(2) + "M";
@@ -19,13 +19,13 @@ function fmtNum(n, compact) {
 }
 
 // ---------- campaign categorisation ----------
-const CATS = [
+export const CATS = [
   { key: "Rooms",   match: "room",    tone: "var(--c-rooms)" },
   { key: "Couple",  match: "couple",  tone: "var(--c-couple)" },
   { key: "Wedding", match: "wedding", tone: "var(--c-wedding)" },
   { key: "Other",   match: null,      tone: "var(--c-other)" },
 ];
-function categoryOf(name) {
+export function categoryOf(name) {
   const n = (name || "").toLowerCase();
   if (n.includes("room")) return "Rooms";
   if (n.includes("couple")) return "Couple";
@@ -33,11 +33,8 @@ function categoryOf(name) {
   return "Other";
 }
 
-// chronological month list straight from the snapshot
-const MONTHS = (window.GM_MONTHLY || []).map(function (m) { return m.month; });
-
 // ---------- tiny atoms ----------
-function Sparkline(props) {
+export function Sparkline(props) {
   var data = props.data || [];
   if (data.length <= 1) return null;
   var w = props.w || 116, h = props.h || 34, p = 3;
@@ -49,7 +46,7 @@ function Sparkline(props) {
     return x.toFixed(1) + "," + y.toFixed(1);
   });
   var last = pts[pts.length - 1].split(",");
-  var gid = "spk" + (props.id || Math.round(Math.random() * 1e6));
+  var gid = "spk" + (props.id || Math.round(Math.random() * 1e6)).toString().replace(/[^a-zA-Z0-9_-]/g, "");
   return (
     <svg width={w} height={h} style={{ overflow: "visible", display: "block" }}>
       <defs>
@@ -69,7 +66,7 @@ function Sparkline(props) {
   );
 }
 
-function TrendChip(props) {
+export function TrendChip(props) {
   var v = props.value;
   if (v == null || isNaN(v)) return null;
   var pos = v >= 0;
@@ -85,12 +82,3 @@ function TrendChip(props) {
     </span>
   );
 }
-
-window.GM = {
-  formatLKR: formatLKR,
-  fmtNum: fmtNum,
-  CATS: CATS,
-  categoryOf: categoryOf,
-  MONTHS: MONTHS,
-};
-Object.assign(window, { Sparkline: Sparkline, TrendChip: TrendChip });

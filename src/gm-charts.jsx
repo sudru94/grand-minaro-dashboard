@@ -1,6 +1,6 @@
 /* Grand Minaro — charts: TrendsChart (dual-axis monthly trajectory) + CategorySplit donut */
-const { useState, useRef, useEffect, useMemo } = React;
-const GM = window.GM;
+import { useState, useRef, useEffect } from "react";
+import { formatLKR, fmtNum } from "./gm-core.jsx";
 
 function useWidth(min) {
   const ref = useRef(null);
@@ -18,19 +18,19 @@ function useWidth(min) {
 }
 
 const METRIC_META = {
-  spend: { name: "Spend", unit: "LKR", fmt: function (v) { return GM.formatLKR(v, true); } },
-  msgConversations: { name: "Chats Started", unit: "", fmt: function (v) { return GM.fmtNum(v); } },
+  spend: { name: "Spend", unit: "LKR", fmt: function (v) { return formatLKR(v, true); } },
+  msgConversations: { name: "Chats Started", unit: "", fmt: function (v) { return fmtNum(v); } },
   ctr: { name: "CTR", unit: "%", fmt: function (v) { return v.toFixed(2) + "%"; } },
-  cpc: { name: "Cost / Click", unit: "LKR", fmt: function (v) { return GM.formatLKR(v); } },
-  cpm: { name: "CPM", unit: "LKR", fmt: function (v) { return GM.formatLKR(v); } },
-  costPerMsgConv: { name: "Cost / Chat", unit: "LKR", fmt: function (v) { return GM.formatLKR(v); } },
+  cpc: { name: "Cost / Click", unit: "LKR", fmt: function (v) { return formatLKR(v); } },
+  cpm: { name: "CPM", unit: "LKR", fmt: function (v) { return formatLKR(v); } },
+  costPerMsgConv: { name: "Cost / Chat", unit: "LKR", fmt: function (v) { return formatLKR(v); } },
 };
 
-function accentHex() {
+export function accentHex() {
   return getComputedStyle(document.body).getPropertyValue("--accent").trim() || "#CF8A00";
 }
 
-function TrendsChart(props) {
+export function TrendsChart(props) {
   const data = props.monthly;
   const selectedMonth = props.selectedMonth;
   const [metric, setMetric] = useState("spend");
@@ -38,7 +38,6 @@ function TrendsChart(props) {
   const [hi, setHi] = useState(null);
   const [ref, width] = useWidth(320);
   const height = 318;
-  const acc = props.accent; // re-render trigger when accent changes
   const accHex = accentHex();
 
   const pad = { l: 58, r: overlay !== "none" ? 56 : 22, t: 18, b: 38 };
@@ -199,10 +198,10 @@ function TrendsChart(props) {
             <div className="tip-row"><span className="k">{METRIC_META[metric].name}</span><span className="v" style={{ color: accHex }}>{METRIC_META[metric].fmt(pts[hi].p)}</span></div>
             {overlay !== "none" && <div className="tip-row"><span className="k">{METRIC_META[overlay].name}</span><span className="v" style={{ color: "#36b277" }}>{METRIC_META[overlay].fmt(pts[hi].s)}</span></div>}
             <div className="tip-foot">
-              <span>Clicks {GM.fmtNum(pts[hi].raw.clicks)}</span>
-              <span>Imps {GM.fmtNum(pts[hi].raw.impressions)}</span>
+              <span>Clicks {fmtNum(pts[hi].raw.clicks)}</span>
+              <span>Imps {fmtNum(pts[hi].raw.impressions)}</span>
               <span>CTR {pts[hi].raw.ctr}%</span>
-              <span>CPC {GM.formatLKR(pts[hi].raw.cpc)}</span>
+              <span>CPC {formatLKR(pts[hi].raw.cpc)}</span>
             </div>
           </div>
         )}
@@ -211,7 +210,7 @@ function TrendsChart(props) {
   );
 }
 
-function CategorySplit(props) {
+export function CategorySplit(props) {
   const cats = props.cats; // [{key, spend, chats, cpa, tone}]
   const total = cats.reduce(function (s, c) { return s + c.spend; }, 0) || 1;
   const R = 78, r = 50, cx = 96, cy = 96;
@@ -242,7 +241,7 @@ function CategorySplit(props) {
         <svg width="192" height="192" style={{ flexShrink: 0 }}>
           {arcs.map(function (a, i) { return <path key={i} d={a.d} fill={a.tone} opacity="0.92" />; })}
           <text x="96" y="90" textAnchor="middle" fill="#5e7686" fontSize="9" fontFamily="JetBrains Mono" letterSpacing="1.5">TOTAL</text>
-          <text x="96" y="108" textAnchor="middle" fill="#e9f0f3" fontSize="15" fontWeight="800" fontFamily="JetBrains Mono">{GM.formatLKR(total, true).replace("LKR ", "")}</text>
+          <text x="96" y="108" textAnchor="middle" fill="#e9f0f3" fontSize="15" fontWeight="800" fontFamily="JetBrains Mono">{formatLKR(total, true).replace("LKR ", "")}</text>
         </svg>
         <div className="cat-legend" style={{ flex: 1, minWidth: "190px" }}>
           {cats.map(function (c, i) {
@@ -252,7 +251,7 @@ function CategorySplit(props) {
                 <span className="cn">{c.key}</span>
                 <div style={{ textAlign: "right" }}>
                   <div className="cv">{((c.spend / total) * 100).toFixed(0)}%</div>
-                  <div className="cc">{c.chats > 0 ? GM.formatLKR(c.cpa) + "/chat" : "no chats"}</div>
+                  <div className="cc">{c.chats > 0 ? formatLKR(c.cpa) + "/chat" : "no chats"}</div>
                 </div>
               </div>
             );
@@ -262,5 +261,3 @@ function CategorySplit(props) {
     </div>
   );
 }
-
-Object.assign(window, { TrendsChart: TrendsChart, CategorySplit: CategorySplit, accentHex: accentHex });

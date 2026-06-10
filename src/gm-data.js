@@ -1,7 +1,8 @@
-/* Grand Minaro — baked Meta Ads snapshot (Aug 2025 – May 2026). Spend in LKR. Conversions = WhatsApp/Messenger chats started. */
+/* Grand Minaro — baked Meta Ads snapshot (Aug 2025 – Jun 2026). Spend in LKR. Conversions = WhatsApp/Messenger chats started. */
 /**
- * Compiled Offline Snapshot of Grand Minaro Meta Ads Spreadsheet
- * Generated: 2026-05-30T07:20:06.652Z
+ * Offline fallback snapshot of the Grand Minaro Meta Ads spreadsheet.
+ * Regenerate with: npm run refresh-snapshot
+ * Generated: 2026-06-10T10:40:27.414Z
  */
 
 window.GM_MONTHLY = [
@@ -124,16 +125,29 @@ window.GM_MONTHLY = [
   },
   {
     "month": "May 2026",
-    "spend": 225138.13,
-    "impressions": 415635,
-    "reach": 124740,
-    "frequency": 3.33,
-    "cpm": 541.67,
-    "clicks": 20240,
-    "ctr": 4.87,
-    "cpc": 11.12,
-    "msgConversations": 1398,
-    "costPerMsgConv": 161.04
+    "spend": 231479.13,
+    "impressions": 428963,
+    "reach": 129161,
+    "frequency": 3.32,
+    "cpm": 539.62,
+    "clicks": 20784,
+    "ctr": 4.85,
+    "cpc": 11.14,
+    "msgConversations": 1432,
+    "costPerMsgConv": 161.65
+  },
+  {
+    "month": "Jun 2026",
+    "spend": 63311.34,
+    "impressions": 145751,
+    "reach": 64998,
+    "frequency": 2.24,
+    "cpm": 434.38,
+    "clicks": 5476,
+    "ctr": 3.76,
+    "cpc": 11.56,
+    "msgConversations": 338,
+    "costPerMsgConv": 187.31
   }
 ];
 
@@ -1695,44 +1709,44 @@ window.GM_CAMPAIGNS = [
   {
     "campaignName": "All Inclusive Wedding Package May 05",
     "month": "May 2026",
-    "spend": 75050.32,
-    "impressions": 120248,
-    "reach": 34936,
+    "spend": 77093.65,
+    "impressions": 124305,
+    "reach": 36170,
     "frequency": 3.44,
-    "cpm": 624.13,
-    "clicks": 5617,
-    "ctr": 4.67,
-    "cpc": 13.36,
-    "msgConversations": 335,
-    "costPerMsgConv": 224.03
+    "cpm": 620.2,
+    "clicks": 5735,
+    "ctr": 4.61,
+    "cpc": 13.44,
+    "msgConversations": 341,
+    "costPerMsgConv": 226.08
   },
   {
     "campaignName": "Couple Package May 13",
     "month": "May 2026",
-    "spend": 51348.74,
-    "impressions": 76617,
-    "reach": 34424,
-    "frequency": 2.23,
-    "cpm": 670.2,
-    "clicks": 3995,
-    "ctr": 5.21,
-    "cpc": 12.85,
-    "msgConversations": 337,
-    "costPerMsgConv": 152.37
+    "spend": 53280.11,
+    "impressions": 80187,
+    "reach": 35844,
+    "frequency": 2.24,
+    "cpm": 664.45,
+    "clicks": 4188,
+    "ctr": 5.22,
+    "cpc": 12.72,
+    "msgConversations": 349,
+    "costPerMsgConv": 152.67
   },
   {
     "campaignName": "Rooms May 13",
     "month": "May 2026",
-    "spend": 50988.92,
-    "impressions": 96557,
-    "reach": 42095,
-    "frequency": 2.29,
-    "cpm": 528.07,
-    "clicks": 4656,
-    "ctr": 4.82,
-    "cpc": 10.95,
-    "msgConversations": 337,
-    "costPerMsgConv": 151.3
+    "spend": 52986.52,
+    "impressions": 101307,
+    "reach": 44789,
+    "frequency": 2.26,
+    "cpm": 523.03,
+    "clicks": 4857,
+    "ctr": 4.79,
+    "cpc": 10.91,
+    "msgConversations": 353,
+    "costPerMsgConv": 150.1
   },
   {
     "campaignName": "Couple Package May 5",
@@ -1789,5 +1803,131 @@ window.GM_CAMPAIGNS = [
     "cpc": 8.64,
     "msgConversations": 46,
     "costPerMsgConv": 149.48
+  },
+  {
+    "campaignName": "All Inclusive Wedding Package June 1 (120247844474850294)",
+    "month": "Jun 2026",
+    "spend": 20403.19,
+    "impressions": 34995,
+    "reach": 12958,
+    "frequency": 2.7,
+    "cpm": 583.03,
+    "clicks": 1167,
+    "ctr": 3.33,
+    "cpc": 17.48,
+    "msgConversations": 72,
+    "costPerMsgConv": 283.38
+  },
+  {
+    "campaignName": "Rooms June 01 (120247843739690294)",
+    "month": "Jun 2026",
+    "spend": 20184.9,
+    "impressions": 50566,
+    "reach": 31211,
+    "frequency": 1.62,
+    "cpm": 399.18,
+    "clicks": 1765,
+    "ctr": 3.49,
+    "cpc": 11.44,
+    "msgConversations": 115,
+    "costPerMsgConv": 175.52
+  },
+  {
+    "campaignName": "Couple Package June 1 (120247878102120294)",
+    "month": "Jun 2026",
+    "spend": 18027.26,
+    "impressions": 44067,
+    "reach": 25171,
+    "frequency": 1.75,
+    "cpm": 409.09,
+    "clicks": 1993,
+    "ctr": 4.52,
+    "cpc": 9.05,
+    "msgConversations": 143,
+    "costPerMsgConv": 126.06
+  },
+  {
+    "campaignName": "Couple Package June 9 (120248422476680294)",
+    "month": "Jun 2026",
+    "spend": 1584.93,
+    "impressions": 5996,
+    "reach": 5202,
+    "frequency": 1.15,
+    "cpm": 264.33,
+    "clicks": 187,
+    "ctr": 3.12,
+    "cpc": 8.48,
+    "msgConversations": 5,
+    "costPerMsgConv": 316.99
+  },
+  {
+    "campaignName": "Couple Package June 01 (120247814770340294)",
+    "month": "Jun 2026",
+    "spend": 1439.13,
+    "impressions": 4566,
+    "reach": 4060,
+    "frequency": 1.12,
+    "cpm": 315.18,
+    "clicks": 170,
+    "ctr": 3.72,
+    "cpc": 8.47,
+    "msgConversations": 0,
+    "costPerMsgConv": 0
+  },
+  {
+    "campaignName": "Rooms June 01 (120247814787010294)",
+    "month": "Jun 2026",
+    "spend": 1274.27,
+    "impressions": 3869,
+    "reach": 2906,
+    "frequency": 1.33,
+    "cpm": 329.35,
+    "clicks": 136,
+    "ctr": 3.52,
+    "cpc": 9.37,
+    "msgConversations": 0,
+    "costPerMsgConv": 0
+  },
+  {
+    "campaignName": "Couple Package June 1 (120247844015950294)",
+    "month": "Jun 2026",
+    "spend": 368.87,
+    "impressions": 1660,
+    "reach": 1531,
+    "frequency": 1.08,
+    "cpm": 222.21,
+    "clicks": 57,
+    "ctr": 3.43,
+    "cpc": 6.47,
+    "msgConversations": 0,
+    "costPerMsgConv": 0
+  },
+  {
+    "campaignName": "Rooms May 13 (120246397218060294)",
+    "month": "Jun 2026",
+    "spend": 0.53,
+    "impressions": 5,
+    "reach": 2,
+    "frequency": 2.5,
+    "cpm": 106,
+    "clicks": 0,
+    "ctr": 0,
+    "cpc": 0,
+    "msgConversations": 3,
+    "costPerMsgConv": 0.18
+  },
+  {
+    "campaignName": "Couple Package May 13 (120246398006760294)",
+    "month": "Jun 2026",
+    "spend": 0.31,
+    "impressions": 2,
+    "reach": 2,
+    "frequency": 1,
+    "cpm": 155,
+    "clicks": 0,
+    "ctr": 0,
+    "cpc": 0,
+    "msgConversations": 0,
+    "costPerMsgConv": 0
   }
 ];

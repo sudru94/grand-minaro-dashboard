@@ -1,6 +1,11 @@
-/* Grand Minaro — main app: header, hero, period filter, KPI cards, layout, tweaks, mount */
-const { useState: uS, useEffect: uE } = React;
-const G = window.GM;
+/* Grand Minaro — main app: header, hero, period filter, KPI cards, layout, mount */
+import { useState, useEffect, useCallback } from "react";
+import { formatLKR, fmtNum, Sparkline, TrendChip } from "./gm-core.jsx";
+import { TrendsChart, CategorySplit } from "./gm-charts.jsx";
+import { Diagnostics, BudgetPlanner, categoryAggregates } from "./gm-insights.jsx";
+import { CampaignTable } from "./gm-table.jsx";
+import { fetchLiveData, loadCachedData, GM_SHEET } from "./gm-source.js";
+import monoSrc from "../assets/gm-monogram.png";
 
 /* ---- inline icons ---- */
 const IC = {
@@ -68,10 +73,6 @@ function computeKPIs(summary, selectedMonth) {
     s_spend: series("spend"), s_chats: series("msgConversations"), s_reach: series("reach"), s_ctr: series("ctr") };
 }
 
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "accent": "gold"
-}/*EDITMODE-END*/;
-
 function relTime(ts) {
   if (!ts) return "";
   const s = Math.round((Date.now() - ts) / 1000);
@@ -81,20 +82,22 @@ function relTime(ts) {
   return Math.round(s / 3600) + "h ago";
 }
 
-function App() {
-  const monoSrc = (window.__resources && window.__resources.monogram) || "assets/gm-monogram.png";
-  const sheetUrl = (window.GM_SHEET && window.GM_SHEET.editUrl) || "https://docs.google.com/spreadsheets/d/1kxG_5NN9wG3BJTrarOJjD66nz-2gX7ByPOc5CV1dow0/edit";
-  const [summary, setSummary] = uS(window.GM_MONTHLY || []);
-  const [campaigns, setCampaigns] = uS(window.GM_CAMPAIGNS || []);
-  const [sync, setSync] = uS({ state: window.fetchLiveData ? "loading" : "baked", at: null, tabs: 11 });
-  const [sel, setSel] = uS("All Time");
-  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const [accentTick, setAccentTick] = uS(0);
+// hydrate once from the last successful sync so repeat visits paint instantly
+const CACHED = loadCachedData();
+if (CACHED && CACHED.totals) window.GM_TOTALS = CACHED.totals;
 
-  const loadLive = React.useCallback(function () {
-    if (!window.fetchLiveData) { setSync({ state: "baked", at: null, tabs: 11 }); return; }
-    setSync(function (s) { return { state: "loading", at: s.at, tabs: s.tabs }; });
-    window.fetchLiveData().then(function (d) {
+export default function App() {
+  const sheetUrl = GM_SHEET.editUrl;
+  const [summary, setSummary] = useState(CACHED ? CACHED.monthly : (window.GM_MONTHLY || []));
+  const [campaigns, setCampaigns] = useState(CACHED ? CACHED.campaigns : (window.GM_CAMPAIGNS || []));
+  const [sync, setSync] = useState(CACHED
+    ? { state: "live", at: CACHED.at, tabs: CACHED.tabs }
+    : { state: "loading", at: null, tabs: 11 });
+  const [sel, setSel] = useState("All Time");
+
+  const loadLive = useCallback(function (quiet) {
+    if (quiet !== true) setSync(function (s) { return { state: "loading", at: s.at, tabs: s.tabs }; });
+    fetchLiveData().then(function (d) {
       if (d && d.monthly && d.monthly.length) {
         window.GM_MONTHLY = d.monthly;
         window.GM_CAMPAIGNS = d.campaigns;
@@ -106,28 +109,31 @@ function App() {
         setSync({ state: "baked", at: null, tabs: 11 });
       }
     }).catch(function (e) {
-      console.warn("Live sheet sync failed — showing baked snapshot:", e);
-      setSync({ state: "error", at: null, tabs: 11 });
+      console.warn("Live sheet sync failed — showing last good data:", e);
+      // if cached/live data is already on screen, keep it instead of flashing an error
+      setSync(function (s) { return s.state === "live" ? s : { state: "error", at: null, tabs: s.tabs }; });
     });
   }, []);
 
-  uE(function () { loadLive(); }, [loadLive]);
+  // revalidate on load — quietly when cache already painted the page
+  useEffect(function () { loadLive(Boolean(CACHED)); }, [loadLive]);
 
-  uE(function () {
-    document.body.classList.toggle("accent-green", t.accent === "green");
-    setAccentTick(function (x) { return x + 1; });
-  }, [t.accent]);
+  // first-visit loading pulse on the headline figures
+  useEffect(function () {
+    document.body.classList.toggle("gm-loading", sync.state === "loading");
+    return function () { document.body.classList.remove("gm-loading"); };
+  }, [sync.state]);
 
   // guard: if a month is selected that the live data doesn't contain, fall back to All Time
-  uE(function () {
+  useEffect(function () {
     if (sel !== "All Time" && !summary.some(function (m) { return m.month === sel; })) setSel("All Time");
   }, [summary]);
 
   const months = ["All Time"].concat(summary.map(function (m) { return m.month; }).slice().reverse());
 
   const k = computeKPIs(summary, sel);
-  const cats = window.categoryAggregates(campaigns, sel);
-  const acc = t.accent === "green" ? "#36b277" : "#E8AE3C";
+  const cats = categoryAggregates(campaigns, sel);
+  const acc = "#E8AE3C"; // gold accent
 
   // date range + month count derived from live data so copy never goes stale
   const monthCount = summary.length;
@@ -174,7 +180,7 @@ function App() {
                 </div>
               );
             })()}
-            <button className={"icon-btn" + (sync.state === "loading" ? " spinning" : "")} title="Refresh from Google Sheets" onClick={loadLive} disabled={sync.state === "loading"}>{IC.refresh}</button>
+            <button className={"icon-btn" + (sync.state === "loading" ? " spinning" : "")} title="Refresh from Google Sheets" onClick={function () { loadLive(false); }} disabled={sync.state === "loading"}>{IC.refresh}</button>
             <a className="src-btn" href={sheetUrl} target="_blank" rel="noreferrer">{IC.db} Source</a>
           </div>
         </div>
@@ -191,8 +197,8 @@ function App() {
             </div>
             <div className="hero-stat">
               <div className="hs-label">{sel === "All Time" ? "Total Spend · " + monthCount + " Months" : sel + " Spend"}</div>
-              <div className="hs-val"><span className="pfx">LKR</span>{G.formatLKR(k.spend, true).replace("LKR ", "")}</div>
-              <div className="hs-meta">{k.chats.toLocaleString()} chats started · {G.fmtNum(k.reach)} reached</div>
+              <div className="hs-val"><span className="pfx">LKR</span>{formatLKR(k.spend, true).replace("LKR ", "")}</div>
+              <div className="hs-meta">{k.chats.toLocaleString()} chats started · {fmtNum(k.reach)} reached</div>
             </div>
           </div>
 
@@ -213,23 +219,23 @@ function App() {
         {/* KPI grid */}
         <section className="kpi-grid">
           <KPICard label="Total Spend" tone="var(--accent)" ico={IC.spend}
-            value={G.formatLKR(k.spend, true)} sub={"CPM " + G.formatLKR(k.cpm)} subSmall={G.fmtNum(k.imps) + " impressions"}
+            value={formatLKR(k.spend, true)} sub={"CPM " + formatLKR(k.cpm)} subSmall={fmtNum(k.imps) + " impressions"}
             trend={k.spendTr} spark={{ data: k.s_spend, color: acc }} />
           <KPICard label="Chats Started" tone="var(--emerald)" ico={IC.chat}
-            value={k.chats.toLocaleString()} sub={"Cost / chat " + G.formatLKR(k.cpa)} subSmall="WhatsApp & Messenger"
+            value={k.chats.toLocaleString()} sub={"Cost / chat " + formatLKR(k.cpa)} subSmall="WhatsApp & Messenger"
             trend={k.chatsTr} spark={{ data: k.s_chats, color: "#36b277" }} />
           <KPICard label="Reach" tone="var(--c-wedding)" ico={IC.reach}
-            value={G.fmtNum(k.reach)} sub={"Frequency " + k.freq.toFixed(2) + "x"} subSmall={"deduplicated audience"}
+            value={fmtNum(k.reach)} sub={"Frequency " + k.freq.toFixed(2) + "x"} subSmall={"deduplicated audience"}
             trend={k.reachTr} spark={{ data: k.s_reach, color: "#4f9dd6" }}
             badge={k.freq >= 3.3 ? "Fatigue" : null} />
           <KPICard label="CTR · Link Clicks" tone="var(--accent)" ico={IC.ctr}
-            value={k.ctr.toFixed(2) + "%"} sub={k.startRate.toFixed(1) + "% chat-start rate"} subSmall={G.fmtNum(k.clicks) + " clicks"}
+            value={k.ctr.toFixed(2) + "%"} sub={k.startRate.toFixed(1) + "% chat-start rate"} subSmall={fmtNum(k.clicks) + " clicks"}
             spark={{ data: k.s_ctr, color: acc }} />
         </section>
 
         {/* trends + donut */}
         <section className="split">
-          <TrendsChart monthly={summary} selectedMonth={sel} accent={accentTick} />
+          <TrendsChart monthly={summary} selectedMonth={sel} />
           <CategorySplit cats={cats} period={sel} />
         </section>
 
@@ -269,18 +275,10 @@ function App() {
           </div>
           <div className="foot-bottom">
             <span>© 2026 Grand Minaro Resort. All rights reserved.</span>
-            <span>Meta Advertising Intelligence · v2.0</span>
+            <span>Meta Advertising Intelligence · v2.1</span>
           </div>
         </div>
       </footer>
-
-      {/* tweaks */}
-      <TweaksPanel>
-        <TweakSection label="Accent emphasis" />
-        <TweakRadio label="Accent" value={t.accent} options={["gold", "green"]} onChange={function (v) { setTweak("accent", v); }} />
-      </TweaksPanel>
     </div>
   );
 }
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);

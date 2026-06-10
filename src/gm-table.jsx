@@ -1,27 +1,28 @@
 /* Grand Minaro — sortable / searchable campaign table */
-const GMT = window.GM;
+import { useState, useEffect } from "react";
+import { formatLKR, fmtNum, categoryOf } from "./gm-core.jsx";
 
-function CampaignTable(props) {
+export function CampaignTable(props) {
   const campaigns = props.campaigns, selectedMonth = props.selectedMonth;
-  const [q, setQ] = React.useState("");
-  const [cat, setCat] = React.useState("All");
-  const [sf, setSf] = React.useState("spend");
-  const [so, setSo] = React.useState("desc");
-  const [page, setPage] = React.useState(1);
+  const [q, setQ] = useState("");
+  const [cat, setCat] = useState("All");
+  const [sf, setSf] = useState("spend");
+  const [so, setSo] = useState("desc");
+  const [page, setPage] = useState(1);
   const pageSize = 8;
 
-  React.useEffect(function () { setPage(1); }, [selectedMonth, q, cat, sf, so]);
+  useEffect(function () { setPage(1); }, [selectedMonth, q, cat, sf, so]);
 
   const period = campaigns.filter(function (c) { return selectedMonth === "All Time" || c.month === selectedMonth; });
   const periodSpend = Math.max(period.reduce(function (s, c) { return s + c.spend; }, 0), 1);
   const maxSpend = Math.max.apply(null, period.map(function (c) { return c.spend; }).concat([1]));
 
   const counts = { All: period.length, Rooms: 0, Couple: 0, Wedding: 0, Other: 0 };
-  period.forEach(function (c) { counts[GMT.categoryOf(c.campaignName)]++; });
+  period.forEach(function (c) { counts[categoryOf(c.campaignName)]++; });
 
   const filtered = period.filter(function (c) {
     if (q && c.campaignName.toLowerCase().indexOf(q.toLowerCase()) === -1) return false;
-    if (cat !== "All" && GMT.categoryOf(c.campaignName) !== cat) return false;
+    if (cat !== "All" && categoryOf(c.campaignName) !== cat) return false;
     return true;
   });
   const sorted = filtered.slice().sort(function (a, b) {
@@ -90,7 +91,7 @@ function CampaignTable(props) {
             {rows.length === 0 ? (
               <tr><td colSpan="9" style={{ textAlign: "center", padding: "40px", color: "var(--ink-faint)" }}>No campaigns match “{q}”.</td></tr>
             ) : rows.map(function (c, i) {
-              const k = GMT.categoryOf(c.campaignName);
+              const k = categoryOf(c.campaignName);
               const share = (c.spend / periodSpend) * 100;
               return (
                 <tr key={i}>
@@ -101,18 +102,18 @@ function CampaignTable(props) {
                     </div>
                   </td>
                   {selectedMonth === "All Time" && <td style={{ textAlign: "left", color: "var(--ink-faint)" }}>{c.month}</td>}
-                  <td className="v-strong">{GMT.formatLKR(c.spend)}</td>
+                  <td className="v-strong">{formatLKR(c.spend)}</td>
                   <td>
                     <div className="share-cell">
                       <div className="share-bar"><i style={{ width: Math.max(6, c.spend / maxSpend * 100) + "%" }}></i></div>
                       <span style={{ color: "var(--ink-faint)", fontSize: "10px", width: "30px" }}>{share.toFixed(1)}%</span>
                     </div>
                   </td>
-                  <td>{GMT.fmtNum(c.clicks)}</td>
+                  <td>{fmtNum(c.clicks)}</td>
                   <td>{c.ctr.toFixed(1)}%</td>
-                  <td>{GMT.formatLKR(c.cpc)}</td>
+                  <td>{formatLKR(c.cpc)}</td>
                   <td className="v-em">{c.msgConversations.toLocaleString()}</td>
-                  <td className="v-strong">{c.costPerMsgConv > 0 ? GMT.formatLKR(c.costPerMsgConv) : "—"}</td>
+                  <td className="v-strong">{c.costPerMsgConv > 0 ? formatLKR(c.costPerMsgConv) : "—"}</td>
                 </tr>
               );
             })}
@@ -139,5 +140,3 @@ function CampaignTable(props) {
     </div>
   );
 }
-
-Object.assign(window, { CampaignTable: CampaignTable });
