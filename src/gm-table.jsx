@@ -31,7 +31,8 @@ export function CampaignTable(props) {
     return so === "asc" ? av - bv : bv - av;
   });
   const totalPages = Math.ceil(sorted.length / pageSize) || 1;
-  const rows = sorted.slice((page - 1) * pageSize, page * pageSize);
+  // report/print mode shows the entire ledger on one page
+  const rows = props.printAll ? sorted : sorted.slice((page - 1) * pageSize, page * pageSize);
 
   function sort(f) { if (sf === f) setSo(so === "asc" ? "desc" : "asc"); else { setSf(f); setSo("desc"); } }
 
@@ -121,7 +122,7 @@ export function CampaignTable(props) {
         </table>
       </div>
 
-      {totalPages > 1 && (
+      {totalPages > 1 && !props.printAll && (
         <div className="pager">
           <div className="info">Showing <b>{(page - 1) * pageSize + 1}</b>–<b>{Math.min(page * pageSize, sorted.length)}</b> of <b>{sorted.length}</b></div>
           <div className="pg-btns">

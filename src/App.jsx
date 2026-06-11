@@ -5,6 +5,7 @@ import { TrendsChart, CategorySplit } from "./gm-charts.jsx";
 import { Diagnostics, BudgetPlanner, categoryAggregates } from "./gm-insights.jsx";
 import { CampaignTable } from "./gm-table.jsx";
 import { ActiveCampaigns, TopCampaign } from "./gm-highlights.jsx";
+import { exportCampaignsCSV, exportMonthlyCSV } from "./gm-export.js";
 import { fetchLiveData, loadCachedData, GM_SHEET } from "./gm-source.js";
 import monoSrc from "../assets/gm-monogram.png";
 
@@ -16,6 +17,7 @@ const IC = {
   ctr: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>,
   refresh: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>,
   db: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>,
+  download: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /><path d="M12 15V3" /></svg>,
 };
 
 function KPICard(p) {
@@ -95,6 +97,25 @@ export default function App() {
     ? { state: "live", at: CACHED.at, tabs: CACHED.tabs }
     : { state: "loading", at: null, tabs: 11 });
   const [sel, setSel] = useState("All Time");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [printing, setPrinting] = useState(false);
+
+  // close the export menu on any outside click
+  useEffect(function () {
+    if (!exportOpen) return;
+    function close(e) { if (!e.target.closest(".export-wrap")) setExportOpen(false); }
+    document.addEventListener("pointerdown", close);
+    return function () { document.removeEventListener("pointerdown", close); };
+  }, [exportOpen]);
+
+  // PDF report: enter report mode (table fully expanded), print, then restore
+  useEffect(function () {
+    if (!printing) return;
+    const t = setTimeout(function () { window.print(); }, 80); // let report mode render first
+    function done() { setPrinting(false); }
+    window.addEventListener("afterprint", done);
+    return function () { clearTimeout(t); window.removeEventListener("afterprint", done); };
+  }, [printing]);
 
   const loadLive = useCallback(function (quiet) {
     if (quiet !== true) setSync(function (s) { return { state: "loading", at: s.at, tabs: s.tabs }; });
@@ -182,6 +203,23 @@ export default function App() {
               );
             })()}
             <button className={"icon-btn" + (sync.state === "loading" ? " spinning" : "")} title="Refresh from Google Sheets" onClick={function () { loadLive(false); }} disabled={sync.state === "loading"}>{IC.refresh}</button>
+            <div className="export-wrap">
+              <button className={"icon-btn" + (exportOpen ? " open" : "")} title="Export report" onClick={function () { setExportOpen(function (o) { return !o; }); }}>{IC.download}</button>
+              {exportOpen && (
+                <div className="export-menu">
+                  <div className="em-h">Export report</div>
+                  <button onClick={function () { exportCampaignsCSV(campaigns, sel); setExportOpen(false); }}>
+                    Campaigns CSV<small>{sel} · per-campaign metrics</small>
+                  </button>
+                  <button onClick={function () { exportMonthlyCSV(summary, window.GM_TOTALS); setExportOpen(false); }}>
+                    Monthly Summary CSV<small>{summary.length} months + grand total</small>
+                  </button>
+                  <button onClick={function () { setExportOpen(false); setPrinting(true); }}>
+                    PDF Report<small>print-ready · full dashboard</small>
+                  </button>
+                </div>
+              )}
+            </div>
             <a className="src-btn" href={sheetUrl} target="_blank" rel="noreferrer">{IC.db} Source</a>
           </div>
         </div>
@@ -190,6 +228,7 @@ export default function App() {
       <main className="wrap fade-in">
         {/* hero */}
         <section className="hero">
+          <div className="print-meta">Meta Ads Report · {sel} · Generated {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} · grand-minaro-dashboard.vercel.app</div>
           <div className="hero-eyebrow">Meta Ads Intelligence · {rangeLabel} · LKR</div>
           <div className="hero-row">
             <div>
@@ -254,7 +293,7 @@ export default function App() {
 
         {/* table */}
         <section className="section">
-          <CampaignTable campaigns={campaigns} selectedMonth={sel} />
+          <CampaignTable campaigns={campaigns} selectedMonth={sel} printAll={printing} />
         </section>
       </main>
 
