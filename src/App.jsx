@@ -1,5 +1,5 @@
 /* Grand Minaro — main app: header, hero, period filter, KPI cards, layout, mount */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { formatLKR, fmtNum, Sparkline, TrendChip } from "./gm-core.jsx";
 import { TrendsChart, CategorySplit } from "./gm-charts.jsx";
 import { Diagnostics, BudgetPlanner, categoryAggregates } from "./gm-insights.jsx";
@@ -139,6 +139,32 @@ export default function App() {
 
   // revalidate on load — quietly when cache already painted the page
   useEffect(function () { loadLive(Boolean(CACHED)); }, [loadLive]);
+
+  // keep the latest sync time + printing flag in refs for the auto-refresh loop
+  const lastSyncRef = useRef(0);
+  const printingRef = useRef(false);
+  useEffect(function () { if (sync.at) lastSyncRef.current = sync.at; }, [sync.at]);
+  useEffect(function () { printingRef.current = printing; }, [printing]);
+
+  // live auto-refresh: quietly re-sync when the tab regains focus (e.g. after editing
+  // the sheet in another tab) and on a gentle background poll while visible — so the
+  // dashboard reflects sheet edits without a manual reload.
+  useEffect(function () {
+    const POLL = 90000, MIN_GAP = 15000;
+    function maybeRefresh() {
+      if (document.visibilityState !== "visible" || printingRef.current) return;
+      if (Date.now() - lastSyncRef.current < MIN_GAP) return;
+      loadLive(true);
+    }
+    const id = setInterval(maybeRefresh, POLL);
+    document.addEventListener("visibilitychange", maybeRefresh);
+    window.addEventListener("focus", maybeRefresh);
+    return function () {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", maybeRefresh);
+      window.removeEventListener("focus", maybeRefresh);
+    };
+  }, [loadLive]);
 
   // first-visit loading pulse on the headline figures
   useEffect(function () {
