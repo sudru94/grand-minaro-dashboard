@@ -1,8 +1,8 @@
-/* Grand Minaro — baked Meta Ads snapshot (Aug 2025 – Jun 2026). Spend in LKR. Conversions = WhatsApp/Messenger chats started. */
+/* Grand Minaro — baked Meta Ads snapshot (Aug 2025 – Jul 2026). Spend in LKR. Conversions = WhatsApp/Messenger chats started. */
 /**
  * Offline fallback snapshot of the Grand Minaro Meta Ads spreadsheet.
  * Regenerate with: npm run refresh-snapshot
- * Generated: 2026-06-10T10:40:27.414Z
+ * Generated: 2026-07-02T18:03:46.451Z
  */
 
 window.GM_MONTHLY = [
@@ -138,16 +138,29 @@ window.GM_MONTHLY = [
   },
   {
     "month": "Jun 2026",
-    "spend": 63311.34,
-    "impressions": 145751,
-    "reach": 64998,
-    "frequency": 2.24,
-    "cpm": 434.38,
-    "clicks": 5476,
-    "ctr": 3.76,
-    "cpc": 11.56,
-    "msgConversations": 338,
-    "costPerMsgConv": 187.31
+    "spend": 203107.84,
+    "impressions": 441633,
+    "reach": 160674,
+    "frequency": 2.75,
+    "cpm": 459.9,
+    "clicks": 15932,
+    "ctr": 3.61,
+    "cpc": 12.75,
+    "msgConversations": 1102,
+    "costPerMsgConv": 184.31
+  },
+  {
+    "month": "Jul 2026",
+    "spend": 3530.12,
+    "impressions": 7075,
+    "reach": 4693,
+    "frequency": 1.51,
+    "cpm": 498.96,
+    "clicks": 308,
+    "ctr": 4.35,
+    "cpc": 11.46,
+    "msgConversations": 24,
+    "costPerMsgConv": 147.09
   }
 ];
 
@@ -1805,32 +1818,60 @@ window.GM_CAMPAIGNS = [
     "costPerMsgConv": 149.48
   },
   {
-    "campaignName": "All Inclusive Wedding Package June 1 (120247844474850294)",
-    "month": "Jun 2026",
-    "spend": 20403.19,
-    "impressions": 34995,
-    "reach": 12958,
-    "frequency": 2.7,
-    "cpm": 583.03,
-    "clicks": 1167,
-    "ctr": 3.33,
-    "cpc": 17.48,
-    "msgConversations": 72,
-    "costPerMsgConv": 283.38
-  },
-  {
     "campaignName": "Rooms June 01 (120247843739690294)",
     "month": "Jun 2026",
-    "spend": 20184.9,
-    "impressions": 50566,
-    "reach": 31211,
-    "frequency": 1.62,
-    "cpm": 399.18,
-    "clicks": 1765,
-    "ctr": 3.49,
-    "cpc": 11.44,
-    "msgConversations": 115,
-    "costPerMsgConv": 175.52
+    "spend": 68402.94,
+    "impressions": 155353,
+    "reach": 85900,
+    "frequency": 1.81,
+    "cpm": 440.31,
+    "clicks": 5465,
+    "ctr": 3.52,
+    "cpc": 12.52,
+    "msgConversations": 373,
+    "costPerMsgConv": 183.39
+  },
+  {
+    "campaignName": "Couple Package June 9 (120248422476680294)",
+    "month": "Jun 2026",
+    "spend": 45445.07,
+    "impressions": 124726,
+    "reach": 61682,
+    "frequency": 2.02,
+    "cpm": 364.36,
+    "clicks": 4804,
+    "ctr": 3.85,
+    "cpc": 9.46,
+    "msgConversations": 365,
+    "costPerMsgConv": 124.51
+  },
+  {
+    "campaignName": "All Inclusive Wedding Package June 1 (120247844474850294)",
+    "month": "Jun 2026",
+    "spend": 44430.59,
+    "impressions": 78826,
+    "reach": 26854,
+    "frequency": 2.94,
+    "cpm": 563.65,
+    "clicks": 2469,
+    "ctr": 3.13,
+    "cpc": 18,
+    "msgConversations": 154,
+    "costPerMsgConv": 288.51
+  },
+  {
+    "campaignName": "All Inclusive Wedding Package June 16 (120248935207720294)",
+    "month": "Jun 2026",
+    "spend": 23682.73,
+    "impressions": 28484,
+    "reach": 10200,
+    "frequency": 2.79,
+    "cpm": 831.44,
+    "clicks": 837,
+    "ctr": 2.94,
+    "cpc": 28.29,
+    "msgConversations": 64,
+    "costPerMsgConv": 370.04
   },
   {
     "campaignName": "Couple Package June 1 (120247878102120294)",
@@ -1845,20 +1886,6 @@ window.GM_CAMPAIGNS = [
     "cpc": 9.05,
     "msgConversations": 143,
     "costPerMsgConv": 126.06
-  },
-  {
-    "campaignName": "Couple Package June 9 (120248422476680294)",
-    "month": "Jun 2026",
-    "spend": 1584.93,
-    "impressions": 5996,
-    "reach": 5202,
-    "frequency": 1.15,
-    "cpm": 264.33,
-    "clicks": 187,
-    "ctr": 3.12,
-    "cpc": 8.48,
-    "msgConversations": 5,
-    "costPerMsgConv": 316.99
   },
   {
     "campaignName": "Couple Package June 01 (120247814770340294)",
@@ -1929,5 +1956,47 @@ window.GM_CAMPAIGNS = [
     "cpc": 0,
     "msgConversations": 0,
     "costPerMsgConv": 0
+  },
+  {
+    "campaignName": "Couple Package + Rooms July 1 (120250034108560294)",
+    "month": "Jul 2026",
+    "spend": 1889.03,
+    "impressions": 4660,
+    "reach": 3281,
+    "frequency": 1.42,
+    "cpm": 405.37,
+    "clicks": 222,
+    "ctr": 4.76,
+    "cpc": 8.51,
+    "msgConversations": 17,
+    "costPerMsgConv": 111.12
+  },
+  {
+    "campaignName": "All Inclusive Wedding Package July 1 (120250001363580294)",
+    "month": "Jul 2026",
+    "spend": 1486.79,
+    "impressions": 2259,
+    "reach": 1518,
+    "frequency": 1.49,
+    "cpm": 658.16,
+    "clicks": 81,
+    "ctr": 3.59,
+    "cpc": 18.36,
+    "msgConversations": 5,
+    "costPerMsgConv": 297.36
+  },
+  {
+    "campaignName": "All Inclusive Wedding Package June 16 (120248935207720294)",
+    "month": "Jul 2026",
+    "spend": 142.82,
+    "impressions": 134,
+    "reach": 119,
+    "frequency": 1.13,
+    "cpm": 1065.82,
+    "clicks": 5,
+    "ctr": 3.73,
+    "cpc": 28.56,
+    "msgConversations": 2,
+    "costPerMsgConv": 71.41
   }
 ];

@@ -99,6 +99,12 @@ export default function App() {
   const [sel, setSel] = useState("All Time");
   const [exportOpen, setExportOpen] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [, setTick] = useState(0); // keeps "synced Xm ago" honest between refreshes
+
+  useEffect(function () {
+    const id = setInterval(function () { setTick(function (t) { return t + 1; }); }, 30000);
+    return function () { clearInterval(id); };
+  }, []);
 
   // close the export menu on any outside click
   useEffect(function () {

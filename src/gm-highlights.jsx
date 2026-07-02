@@ -28,20 +28,38 @@ function aggregateByName(rows) {
 }
 
 /* Campaigns with spend in the current calendar month — the closest thing the
-   sheet has to an "active" flag. Auto-rolls over each month. */
+   sheet has to an "active" flag. Auto-rolls over each month; until the new
+   month's tab has rows, it falls back to the latest month with data. */
 export function ActiveCampaigns(props) {
-  const month = currentMonthLabel();
-  const live = props.campaigns.filter(function (c) { return c.month === month && c.spend > 0; })
-    .slice().sort(function (a, b) { return b.spend - a.spend; });
+  const nowMonth = currentMonthLabel();
+  function running(m) {
+    return props.campaigns.filter(function (c) { return c.month === m && c.spend > 0; })
+      .slice().sort(function (a, b) { return b.spend - a.spend; });
+  }
+  let month = nowMonth;
+  let live = running(month);
+  let fallback = false;
+  if (live.length === 0) {
+    // latest month that has any spend (campaign order follows the sheet's chronology)
+    for (let i = props.campaigns.length - 1; i >= 0; i--) {
+      if (props.campaigns[i].spend > 0) { month = props.campaigns[i].month; break; }
+    }
+    live = month === nowMonth ? live : running(month);
+    fallback = live.length > 0;
+  }
 
   return (
     <div className="panel" style={{ display: "flex", flexDirection: "column" }}>
       <div className="panel-head">
         <div>
           <h2 className="panel-title"><span className="tick"></span>Active Campaigns</h2>
-          <div className="panel-sub">{live.length > 0 ? live.length + " running in " + month + " · month-to-date figures" : "No spend recorded yet for " + month}</div>
+          <div className="panel-sub">{live.length > 0
+            ? (fallback
+              ? "No " + nowMonth + " spend yet — showing latest month, " + month
+              : live.length + " running in " + month + " · month-to-date figures")
+            : "No spend recorded yet for " + month}</div>
         </div>
-        {live.length > 0 && <span className="live-tag" style={{ alignSelf: "center" }}>● {live.length} Active</span>}
+        {live.length > 0 && <span className="live-tag" style={{ alignSelf: "center" }}>● {live.length} {fallback ? "Latest" : "Active"}</span>}
       </div>
       <div className="ac-list">
         {live.length === 0 ? (

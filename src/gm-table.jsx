@@ -25,9 +25,16 @@ export function CampaignTable(props) {
     if (cat !== "All" && categoryOf(c.campaignName) !== cat) return false;
     return true;
   });
+  // "MMM YYYY" -> sortable number, so the Month column sorts chronologically (not alphabetically)
+  const MONTH_IDX = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+  function monthKey(label) {
+    const p = String(label).split(" ");
+    return (parseInt(p[1], 10) || 0) * 12 + (MONTH_IDX[p[0]] != null ? MONTH_IDX[p[0]] : 0);
+  }
   const sorted = filtered.slice().sort(function (a, b) {
     let av = a[sf], bv = b[sf];
-    if (typeof av === "string") return so === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+    if (sf === "month") { av = monthKey(av); bv = monthKey(bv); }
+    else if (typeof av === "string") return so === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
     return so === "asc" ? av - bv : bv - av;
   });
   const totalPages = Math.ceil(sorted.length / pageSize) || 1;
