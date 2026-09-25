@@ -8,7 +8,7 @@ to a baked snapshot (`src/gm-data.js`) if the sheet is unreachable.
 **Live:** https://grand-minaro-dashboard.vercel.app
 
 ## Stack
-Vite + React 18 (production build). Data layer (`src/gm-source.js`) fetches the Google
+Vite 8 + React 19 (production build). Data layer (`src/gm-source.js`) fetches the Google
 Sheet via the CORS-enabled gviz CSV endpoint, auto-discovering months from the Monthly
 Summary tab — new month tabs appear on the dashboard with no code change.
 
