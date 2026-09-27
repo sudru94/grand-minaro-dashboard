@@ -1,6 +1,6 @@
 # Grand Minaro — Meta Ads Intelligence Dashboard
 
-A dark-premium, single-page analytics dashboard for Grand Minaro Resort's Meta (Facebook &
+A light, Apple-style single-page analytics dashboard for Grand Minaro Resort's Meta (Facebook &
 Instagram) advertising. It reads **live data from a published Google Sheet** at runtime,
 caches the last successful sync in `localStorage` for instant repeat loads, and falls back
 to a baked snapshot (`src/gm-data.js`) if the sheet is unreachable.
@@ -33,11 +33,13 @@ Security headers (CSP, HSTS, anti-clickjacking, etc.) are set in `vercel.json`.
 
 ## Files
 - `index.html` — entry + meta/OG tags
-- `src/App.jsx` — header, hero, period filter, KPI cards, layout, live-sync wiring
-- `src/gm-charts.jsx` / `gm-insights.jsx` / `gm-table.jsx` / `gm-core.jsx` — components
+- `src/App.jsx` — glass toolbar, title + period picker, KPI tiles, layout, live-sync wiring
+- `src/gm-charts.jsx` / `gm-highlights.jsx` / `gm-insights.jsx` / `gm-table.jsx` / `gm-core.jsx` — components
 - `src/gm-source.js` — live Google Sheets fetch, CSV parsing, localStorage cache
 - `src/gm-data.js` — baked offline fallback snapshot (regenerable)
-- `src/styles.css` — the full design system
+- `src/styles.css` — the design system: Apple light-mode colour tokens, and Liquid Glass used
+  only on floating controls (toolbar, menu, chart tooltip), with reduced-transparency,
+  increased-contrast and reduced-motion fallbacks
 - `public/` — favicons + social link-preview card
 - `assets/` — brand monogram + lockup
 - `scripts/refresh-snapshot.mjs` — snapshot regenerator

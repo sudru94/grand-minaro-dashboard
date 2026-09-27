@@ -1,8 +1,8 @@
-/* Grand Minaro — main app: header, hero, period filter, KPI cards, layout, mount */
+/* Grand Minaro — main app: glass toolbar, title + period, KPI tiles, sections */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { formatLKR, fmtNum, Sparkline, TrendChip } from "./gm-core.jsx";
 import { TrendsChart, CategorySplit } from "./gm-charts.jsx";
-import { Diagnostics, BudgetPlanner, categoryAggregates } from "./gm-insights.jsx";
+import { Insights, categoryAggregates } from "./gm-insights.jsx";
 import { CampaignTable } from "./gm-table.jsx";
 import { ActiveCampaigns, TopCampaign } from "./gm-highlights.jsx";
 import { exportCampaignsCSV, exportMonthlyCSV } from "./gm-export.js";
@@ -11,30 +11,20 @@ import monoSrc from "../assets/gm-monogram.png";
 
 /* ---- inline icons ---- */
 const IC = {
-  spend: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>,
-  chat: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.9-.9L3 21l1.9-5.6a8.5 8.5 0 0 1-.9-3.9A8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5Z" /></svg>,
-  reach: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
-  ctr: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z" /></svg>,
-  refresh: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" /></svg>,
-  db: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>,
-  download: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /><path d="M12 15V3" /></svg>,
+  refresh: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36" /><path d="M21 3v6h-6" /></svg>,
+  share: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v12" /><path d="m7 8 5-5 5 5" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg>,
+  chevron: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m7 9 5 5 5-5" /></svg>,
 };
 
 function KPICard(p) {
   return (
-    <div className="kpi-card" style={{ "--kpi-tone": p.tone }}>
-      {p.badge && <span className="badge-warn">{p.badge}</span>}
-      <div className="kpi-top">
+    <div className="kpi">
+      <div className="kpi-label">{p.label}{p.badge && <span className="badge">{p.badge}</span>}</div>
+      <div className="kpi-value">{p.value}</div>
+      <div className="kpi-foot">
         <div>
-          <div className="kpi-label">{p.label}</div>
-          <div className="kpi-value">{p.value}</div>
-        </div>
-        <div className="kpi-ico">{p.ico}</div>
-      </div>
-      <div className="kpi-bottom">
-        <div>
-          <div className="kpi-sub">{p.sub}<small>{p.subSmall}</small></div>
-          {p.trend != null && <div style={{ marginTop: "7px" }}><TrendChip value={p.trend} invert={p.trendInvert} label="vs prev" /></div>}
+          <div className="kpi-sub">{p.sub}</div>
+          {p.trend != null && <TrendChip value={p.trend} invert={p.trendInvert} label={p.trendLabel} />}
         </div>
         {p.spark && <Sparkline data={p.spark.data} color={p.spark.color} id={p.label} />}
       </div>
@@ -55,23 +45,22 @@ function computeKPIs(summary, selectedMonth) {
     chats = summary.reduce(function (s, m) { return s + m.msgConversations; }, 0);
     freq = totals && totals.frequency ? totals.frequency : 2.40;
   } else {
-    const it = summary.find(function (m) { return m.month === selectedMonth; });
-    spend = it.spend; imps = it.impressions; reach = it.reach; clicks = it.clicks; chats = it.msgConversations; freq = it.frequency;
     const idx = summary.findIndex(function (m) { return m.month === selectedMonth; });
+    const it = summary[idx];
+    spend = it.spend; imps = it.impressions; reach = it.reach; clicks = it.clicks; chats = it.msgConversations; freq = it.frequency;
     if (idx > 0) prev = summary[idx - 1];
   }
   const ctr = imps > 0 ? clicks / imps * 100 : 0;
-  const cpc = clicks > 0 ? spend / clicks : 0;
   const cpm = imps > 0 ? spend / imps * 1000 : 0;
   const cpa = chats > 0 ? spend / chats : 0;
-  const startRate = clicks > 0 ? chats / clicks * 100 : 0;
   const tr = function (cur, key) { return prev && prev[key] ? (cur - prev[key]) / prev[key] * 100 : null; };
   const series = function (key) {
     if (isAll) return summary.map(function (m) { return m[key]; });
     const idx = summary.findIndex(function (m) { return m.month === selectedMonth; });
     return summary.slice(Math.max(0, idx - 5), idx + 1).map(function (m) { return m[key]; });
   };
-  return { spend: spend, imps: imps, reach: reach, clicks: clicks, chats: chats, freq: freq, ctr: ctr, cpc: cpc, cpm: cpm, cpa: cpa, startRate: startRate,
+  return { spend: spend, imps: imps, reach: reach, clicks: clicks, chats: chats, freq: freq, ctr: ctr, cpm: cpm, cpa: cpa,
+    prevLabel: prev ? "vs " + prev.month.split(" ")[0] : null,
     spendTr: tr(spend, "spend"), chatsTr: tr(chats, "msgConversations"), reachTr: tr(reach, "reach"),
     s_spend: series("spend"), s_chats: series("msgConversations"), s_reach: series("reach"), s_ctr: series("ctr") };
 }
@@ -79,8 +68,7 @@ function computeKPIs(summary, selectedMonth) {
 function relTime(ts) {
   if (!ts) return "";
   const s = Math.round((Date.now() - ts) / 1000);
-  if (s < 10) return "just now";
-  if (s < 60) return s + "s ago";
+  if (s < 60) return "just now";
   if (s < 3600) return Math.round(s / 60) + "m ago";
   return Math.round(s / 3600) + "h ago";
 }
@@ -106,12 +94,14 @@ export default function App() {
     return function () { clearInterval(id); };
   }, []);
 
-  // close the export menu on any outside click
+  // close the export menu on any outside click or Escape
   useEffect(function () {
     if (!exportOpen) return;
     function close(e) { if (!e.target.closest(".export-wrap")) setExportOpen(false); }
+    function esc(e) { if (e.key === "Escape") setExportOpen(false); }
     document.addEventListener("pointerdown", close);
-    return function () { document.removeEventListener("pointerdown", close); };
+    document.addEventListener("keydown", esc);
+    return function () { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", esc); };
   }, [exportOpen]);
 
   // PDF report: enter report mode (table fully expanded), print, then restore
@@ -184,178 +174,119 @@ export default function App() {
   }, [summary]);
 
   const months = ["All Time"].concat(summary.map(function (m) { return m.month; }).slice().reverse());
-
   const k = computeKPIs(summary, sel);
   const cats = categoryAggregates(campaigns, sel);
-  const acc = "#E8AE3C"; // gold accent
 
-  // date range + month count derived from live data so copy never goes stale
   const monthCount = summary.length;
-  const firstMonth = monthCount ? summary[0].month : "";
-  const lastMonth = monthCount ? summary[monthCount - 1].month : "";
-  const rangeLabel = firstMonth && lastMonth ? firstMonth + " ▸ " + lastMonth : "";
+  const rangeLabel = monthCount ? summary[0].month + " – " + summary[monthCount - 1].month : "";
 
-  const heroTitle = sel === "All Time" ? "The full campaign story, end to end." : sel + " — performance in focus.";
-  const heroSub = sel === "All Time"
-    ? monthCount + " months of Meta advertising for Grand Minaro — every rupee of spend, every conversation started, mapped across rooms, couple retreats and weddings."
-    : "Filtered to " + sel + ". KPIs compare against the prior month; the trajectory chart highlights this period in context.";
+  const status = {
+    loading: { dot: "dot pulse", text: "Syncing…" },
+    live: { dot: "dot", text: "Live · synced " + relTime(sync.at) },
+    baked: { dot: "dot warn", text: "Offline snapshot" },
+    error: { dot: "dot err", text: "Couldn’t sync · showing saved data" }
+  }[sync.state] || { dot: "dot", text: "" };
 
   return (
     <div>
-      {/* top bar */}
-      <header className="topbar">
-        <div className="wrap">
+      <div className="scroll-edge" aria-hidden="true"></div>
+
+      {/* floating Liquid Glass toolbar — the only glass surface besides its popover */}
+      <header className="toolbar-wrap">
+        <div className="toolbar glass">
           <div className="brand">
-            <img className="mono-mark" src={monoSrc} alt="Grand Minaro" />
-            <span className="brand-divider"></span>
-            <div>
-              <div className="wm-name">GRAND MINARO</div>
-              <div className="wm-sub">
-                <span className="wm-tag">Meta Ads Intelligence</span>
-                {sync.state === "live" && <span className="live-tag">● Live</span>}
+            <img className="mono-mark" src={monoSrc} alt="" />
+            <div className="brand-text">
+              <div className="wm-name">Grand Minaro</div>
+              <div className="status" title={sync.state === "error" ? "Could not reach the Google Sheet" : ""}>
+                <span className={status.dot}></span>{status.text}
               </div>
             </div>
           </div>
-          <div className="top-actions">
-            {(function () {
-              const cfg = {
-                loading: { dot: "dot pulse", main: "Syncing Sheets", sub: sync.tabs + " tabs · fetching…" },
-                live: { dot: "dot pulse", main: "Sheets Connected", sub: sync.tabs + " tabs · synced " + relTime(sync.at) },
-                baked: { dot: "dot warn", main: "Offline Snapshot", sub: campaigns.length + " campaigns · baked" },
-                error: { dot: "dot err", main: "Sync Failed", sub: "showing snapshot · retry ↻" }
-              }[sync.state] || { dot: "dot", main: "Sheets", sub: "" };
-              return (
-                <div className="status-chip" title={sync.state === "live" ? "Synced from Google Sheets" : sync.state === "error" ? "Could not reach the sheet — using baked snapshot" : ""}>
-                  <span className={cfg.dot}></span>
-                  <div>
-                    <div className="s-main">{cfg.main}</div>
-                    <div className="s-sub">{cfg.sub}</div>
-                  </div>
-                </div>
-              );
-            })()}
-            <button className={"icon-btn" + (sync.state === "loading" ? " spinning" : "")} title="Refresh from Google Sheets" onClick={function () { loadLive(false); }} disabled={sync.state === "loading"}>{IC.refresh}</button>
+          <div className="actions">
+            <button className={"icon-btn" + (sync.state === "loading" ? " spinning" : "")} aria-label="Refresh data" title="Refresh data"
+              onClick={function () { loadLive(false); }} disabled={sync.state === "loading"}>{IC.refresh}</button>
             <div className="export-wrap">
-              <button className={"icon-btn" + (exportOpen ? " open" : "")} title="Export report" onClick={function () { setExportOpen(function (o) { return !o; }); }}>{IC.download}</button>
+              <button className="icon-btn" aria-label="Export" title="Export" aria-expanded={exportOpen} aria-haspopup="menu"
+                onClick={function () { setExportOpen(function (o) { return !o; }); }}>{IC.share}</button>
               {exportOpen && (
-                <div className="export-menu">
-                  <div className="em-h">Export report</div>
-                  <button onClick={function () { exportCampaignsCSV(campaigns, sel); setExportOpen(false); }}>
-                    Campaigns CSV<small>{sel} · per-campaign metrics</small>
+                <div className="menu glass" role="menu">
+                  <button role="menuitem" onClick={function () { exportCampaignsCSV(campaigns, sel); setExportOpen(false); }}>
+                    Campaigns (CSV)<small>{sel}</small>
                   </button>
-                  <button onClick={function () { exportMonthlyCSV(summary, window.GM_TOTALS); setExportOpen(false); }}>
-                    Monthly Summary CSV<small>{summary.length} months + grand total</small>
+                  <button role="menuitem" onClick={function () { exportMonthlyCSV(summary, window.GM_TOTALS); setExportOpen(false); }}>
+                    Monthly Summary (CSV)<small>{monthCount} months</small>
                   </button>
-                  <button onClick={function () { setExportOpen(false); setPrinting(true); }}>
-                    PDF Report<small>print-ready · full dashboard</small>
+                  <button role="menuitem" onClick={function () { setExportOpen(false); setPrinting(true); }}>
+                    PDF Report<small>Print-ready dashboard</small>
                   </button>
+                  <a className="menu-sheet" role="menuitem" href={sheetUrl} target="_blank" rel="noreferrer">
+                    Open Google Sheet<small>Source data</small>
+                  </a>
                 </div>
               )}
             </div>
-            <a className="src-btn" href={sheetUrl} target="_blank" rel="noreferrer">{IC.db} Source</a>
+            <a className="btn-primary" href={sheetUrl} target="_blank" rel="noreferrer">Open Sheet</a>
           </div>
         </div>
       </header>
 
       <main className="wrap fade-in">
-        {/* hero */}
-        <section className="hero">
-          <div className="print-meta">Meta Ads Report · {sel} · Generated {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} · grand-minaro-dashboard.vercel.app</div>
-          <div className="hero-eyebrow">Meta Ads Intelligence · {rangeLabel} · LKR</div>
-          <div className="hero-row">
-            <div>
-              <h1 className="hero-title">{heroTitle}</h1>
-              <p className="hero-sub">{heroSub}</p>
-            </div>
-            <div className="hero-stat">
-              <div className="hs-label">{sel === "All Time" ? "Total Spend · " + monthCount + " Months" : sel + " Spend"}</div>
-              <div className="hs-val"><span className="pfx">LKR</span>{formatLKR(k.spend, true).replace("LKR ", "")}</div>
-              <div className="hs-meta">{k.chats.toLocaleString()} chats started · {fmtNum(k.reach)} reached</div>
-            </div>
+        {/* large title + period */}
+        <section className="title-row">
+          <div>
+            <div className="print-meta">Meta Ads Report · {sel} · Generated {new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</div>
+            <h1 className="large-title">{sel === "All Time" ? "Meta Ads" : sel}</h1>
+            <p className="subtitle">{sel === "All Time" ? rangeLabel + " · " + monthCount + " months · LKR" : "Compared with the previous month · LKR"}</p>
           </div>
-
-          {/* period filter — pills on desktop, compact dropdown on small screens */}
-          <div className="period-bar">
-            <span className="period-lbl">Period</span>
-            <div className="pills">
-              {months.map(function (m) {
-                return <button key={m} className={"pill" + (m === "All Time" ? " all" : "") + (sel === m ? " active" : "")} onClick={function () { setSel(m); }}>{m}</button>;
-              })}
-            </div>
-            <select className="sel period-select" value={sel} onChange={function (e) { setSel(e.target.value); }} aria-label="Select period">
+          <label className="popup">
+            <span className="sr-only">Period</span>
+            <select value={sel} onChange={function (e) { setSel(e.target.value); }}>
               {months.map(function (m) { return <option key={m} value={m}>{m}</option>; })}
             </select>
-          </div>
+            {IC.chevron}
+          </label>
         </section>
 
-        {/* KPI grid */}
+        {/* KPI tiles */}
         <section className="kpi-grid">
-          <KPICard label="Total Spend" tone="var(--accent)" ico={IC.spend}
-            value={formatLKR(k.spend, true)} sub={"CPM " + formatLKR(k.cpm)} subSmall={fmtNum(k.imps) + " impressions"}
-            trend={k.spendTr} spark={{ data: k.s_spend, color: acc }} />
-          <KPICard label="Chats Started" tone="var(--emerald)" ico={IC.chat}
-            value={k.chats.toLocaleString()} sub={"Cost / chat " + formatLKR(k.cpa)} subSmall="WhatsApp & Messenger"
-            trend={k.chatsTr} spark={{ data: k.s_chats, color: "#36b277" }} />
-          <KPICard label="Reach" tone="var(--c-wedding)" ico={IC.reach}
-            value={fmtNum(k.reach)} sub={"Frequency " + k.freq.toFixed(2) + "x"} subSmall={"deduplicated audience"}
-            trend={k.reachTr} spark={{ data: k.s_reach, color: "#4f9dd6" }}
+          <KPICard label="Spend" value={formatLKR(k.spend, true)}
+            sub={"CPM " + formatLKR(k.cpm) + " · " + fmtNum(k.imps) + " impressions"}
+            trend={k.spendTr} trendLabel={k.prevLabel} spark={{ data: k.s_spend, color: "var(--accent)" }} />
+          <KPICard label="Chats Started" value={k.chats.toLocaleString()}
+            sub={formatLKR(k.cpa) + " per chat"}
+            trend={k.chatsTr} trendLabel={k.prevLabel} spark={{ data: k.s_chats, color: "var(--green)" }} />
+          <KPICard label="Reach" value={fmtNum(k.reach)}
+            sub={"Frequency " + k.freq.toFixed(2) + "×"}
+            trend={k.reachTr} trendLabel={k.prevLabel} spark={{ data: k.s_reach, color: "var(--blue)" }}
             badge={k.freq >= 3.3 ? "Fatigue" : null} />
-          <KPICard label="CTR · Link Clicks" tone="var(--accent)" ico={IC.ctr}
-            value={k.ctr.toFixed(2) + "%"} sub={k.startRate.toFixed(1) + "% chat-start rate"} subSmall={fmtNum(k.clicks) + " clicks"}
-            spark={{ data: k.s_ctr, color: acc }} />
+          <KPICard label="Click-Through Rate" value={k.ctr.toFixed(2) + "%"}
+            sub={fmtNum(k.clicks) + " link clicks"}
+            spark={{ data: k.s_ctr, color: "var(--accent)" }} />
         </section>
 
-        {/* active campaigns + top performer */}
-        <section className="split">
-          <ActiveCampaigns campaigns={campaigns} />
-          <TopCampaign campaigns={campaigns} selectedMonth={sel} />
-        </section>
-
-        {/* trends + donut */}
         <section className="split">
           <TrendsChart monthly={summary} selectedMonth={sel} />
           <CategorySplit cats={cats} period={sel} />
         </section>
 
-        {/* diagnostics + planner */}
         <section className="split">
-          <Diagnostics campaigns={campaigns} summary={summary} selectedMonth={sel} />
-          <BudgetPlanner campaigns={campaigns} selectedMonth={sel} />
+          <ActiveCampaigns campaigns={campaigns} />
+          <TopCampaign campaigns={campaigns} selectedMonth={sel} />
         </section>
 
-        {/* table */}
+        <section className="section">
+          <Insights campaigns={campaigns} summary={summary} selectedMonth={sel} cats={cats} />
+        </section>
+
         <section className="section">
           <CampaignTable campaigns={campaigns} selectedMonth={sel} printAll={printing} />
         </section>
       </main>
 
-      {/* footer */}
-      <footer className="footer">
-        <div className="wrap">
-          <div className="foot-grid">
-            <div>
-              <div className="foot-brand"><img className="foot-mark" src={monoSrc} alt="" /><h4 className="foot-h" style={{ margin: 0 }}>Grand Minaro Resort</h4></div>
-              <p className="foot-p">Premium accommodation, boutique weddings and couple retreats. All campaigns ran on Meta (Facebook &amp; Instagram) driving Messenger and WhatsApp conversations, billed in Sri Lankan Rupees.</p>
-            </div>
-            <div>
-              <h4 className="foot-h">Measurement Notes</h4>
-              <ul className="foot-list">
-                <li>Currency is <b>Sri Lankan Rupee (LKR)</b>.</li>
-                <li>Conversions = <b>Messenger / WhatsApp chats started</b>.</li>
-                <li>Attribution: 7-day click, 1-day view.</li>
-                <li>Purchases, revenue &amp; ROAS are <b>N/A</b> — no conversion pixel on this account.</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="foot-h">Live Google Sheets</h4>
-              <p className="foot-p">This dashboard reads a published spreadsheet — a Monthly Summary plus one tab per month{sync.tabs ? " (" + sync.tabs + " tabs)" : ""}. Add a new month tab, then refresh to watch every chart, KPI and ledger update in place.</p>
-            </div>
-          </div>
-          <div className="foot-bottom">
-            <span>© 2026 Grand Minaro Resort. All rights reserved.</span>
-            <span>Meta Advertising Intelligence · v2.1</span>
-          </div>
-        </div>
+      <footer className="footer wrap">
+        <p>Chats are Messenger and WhatsApp conversations started. Attribution: 7-day click, 1-day view. Revenue and ROAS aren’t tracked on this account.</p>
+        <p>© 2026 Grand Minaro Resort · Data from Google Sheets{sync.tabs ? " (" + sync.tabs + " tabs)" : ""}</p>
       </footer>
     </div>
   );
