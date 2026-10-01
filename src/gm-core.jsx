@@ -19,12 +19,7 @@ export function fmtNum(n, compact) {
 }
 
 // ---------- campaign categorisation ----------
-export const CATS = [
-  { key: "Rooms",   match: "room",    tone: "var(--c-rooms)" },
-  { key: "Couple",  match: "couple",  tone: "var(--c-couple)" },
-  { key: "Wedding", match: "wedding", tone: "var(--c-wedding)" },
-  { key: "Other",   match: null,      tone: "var(--c-other)" },
-];
+export const CAT_TONE = { Rooms: "var(--blue)", Couple: "var(--green)", Wedding: "var(--accent)", Other: "var(--gray)" };
 export function categoryOf(name) {
   const n = (name || "").toLowerCase();
   if (n.includes("room")) return "Rooms";
@@ -32,12 +27,16 @@ export function categoryOf(name) {
   if (n.includes("wedding")) return "Wedding";
   return "Other";
 }
+export function CatTag(props) {
+  const k = categoryOf(props.name);
+  return <span className="cat-tag"><i style={{ background: CAT_TONE[k] }}></i>{k}</span>;
+}
 
 // ---------- tiny atoms ----------
 export function Sparkline(props) {
   var data = props.data || [];
   if (data.length <= 1) return null;
-  var w = props.w || 116, h = props.h || 34, p = 3;
+  var w = props.w || 96, h = props.h || 32, p = 3;
   var min = Math.min.apply(null, data), max = Math.max.apply(null, data);
   var range = max - min === 0 ? 1 : max - min;
   var pts = data.map(function (v, i) {
@@ -48,20 +47,20 @@ export function Sparkline(props) {
   var last = pts[pts.length - 1].split(",");
   var gid = "spk" + (props.id || Math.round(Math.random() * 1e6)).toString().replace(/[^a-zA-Z0-9_-]/g, "");
   return (
-    <svg width={w} height={h} style={{ overflow: "visible", display: "block" }}>
+    <svg width={w} height={h} viewBox={"0 0 " + w + " " + h} style={{ overflow: "visible", display: "block" }} aria-hidden="true">
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={props.color} stopOpacity="0.22" />
-          <stop offset="100%" stopColor={props.color} stopOpacity="0" />
+          <stop offset="0%" style={{ stopColor: props.color, stopOpacity: 0.2 }} />
+          <stop offset="100%" style={{ stopColor: props.color, stopOpacity: 0 }} />
         </linearGradient>
       </defs>
       <polyline
         points={pts.join(" ") + " " + last[0] + "," + h + " " + p + "," + h}
         fill={"url(#" + gid + ")"} stroke="none"
       />
-      <polyline points={pts.join(" ")} fill="none" stroke={props.color}
-        strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r="2.4" fill={props.color} />
+      <polyline points={pts.join(" ")} fill="none" style={{ stroke: props.color }}
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last[0]} cy={last[1]} r="2.6" style={{ fill: props.color }} />
     </svg>
   );
 }
