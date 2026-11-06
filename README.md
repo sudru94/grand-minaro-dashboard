@@ -55,4 +55,4 @@ regardless of the device's preferred color scheme.
 
 ## Data
 Currency LKR. Conversions = WhatsApp/Messenger chats started. No purchase pixel → no ROAS.
-The current calendar month renders as a dashed **MTD** tail on the trajectory chart.
+The current calendar month renders as a hatched **MTD** column on the monthly bar chart.

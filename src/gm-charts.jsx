@@ -1,4 +1,4 @@
-/* Grand Minaro — charts: TrendsChart (monthly line, one metric at a time) + CategorySplit donut */
+/* Grand Minaro — charts: TrendsChart (monthly columns, one metric at a time) + CategorySplit donut */
 import { useState, useRef, useEffect } from "react";
 import { formatLKR, fmtNum } from "./gm-core.jsx";
 
@@ -21,7 +21,7 @@ function useSize(minW, minH) {
 const METRICS = {
   spend: { name: "Spend", color: "var(--blue)", zero: true, fmt: function (v) { return formatLKR(v, true); } },
   msgConversations: { name: "Chats", color: "var(--green)", zero: true, fmt: function (v) { return fmtNum(v); } },
-  costPerMsgConv: { name: "Per Chat", color: "var(--purple)", zero: false, fmt: function (v) { return formatLKR(v); } },
+  costPerMsgConv: { name: "Per Chat", color: "var(--purple)", zero: true, fmt: function (v) { return formatLKR(v); } },
   ctr: { name: "CTR", color: "var(--accent)", zero: true, fmt: function (v) { return v.toFixed(2) + "%"; } },
 };
 
@@ -65,7 +65,10 @@ export function TrendsChart(props) {
   const vMax = Math.max.apply(null, vals.concat([0])) * 1.08 || 1;
   const vMin = M.zero ? 0 : Math.min.apply(null, vals) * 0.9;
 
-  const X = function (i) { return pad.l + i * (width - pad.l - pad.r) / (pts.length - 1 || 1); };
+  // one band per month; X(i) is the band's centre, bars are capped at 24px wide
+  const band = (width - pad.l - pad.r) / (pts.length || 1);
+  const X = function (i) { return pad.l + band * (i + 0.5); };
+  const barW = Math.max(4, Math.min(24, band * 0.62));
   const Y = function (v) {
     const r = vMax - vMin === 0 ? 0.5 : (v - vMin) / (vMax - vMin);
     return height - pad.b - r * (height - pad.t - pad.b);
@@ -74,16 +77,16 @@ export function TrendsChart(props) {
   // the in-progress (month-to-date) point is the last one if it's the current calendar month
   const nowLabel = (function () { const d = new Date(); return d.toLocaleString("en-US", { month: "short" }) + " " + d.getFullYear(); })();
   const hasMTD = pts.length > 1 && pts[pts.length - 1].label === nowLabel;
-  const solidEnd = hasMTD ? pts.length - 1 : pts.length;
+  const base = height - pad.b;
 
-  let line = "", area = "";
-  for (let i = 0; i < solidEnd; i++) {
-    const x = X(i), y = Y(pts[i].v);
-    line += (i === 0 ? "M " : " L ") + x + " " + y;
-    area += (i === 0 ? "M " + x + " " + (height - pad.b) + " L " : " L ") + x + " " + y;
-    if (i === solidEnd - 1) area += " L " + x + " " + (height - pad.b) + " Z";
+  // column with a 4px rounded data-end and a square foot on the baseline
+  function barPath(i) {
+    const x0 = X(i) - barW / 2, x1 = x0 + barW, y = Y(pts[i].v);
+    const h = base - y; if (h <= 0) return "";
+    const r = Math.min(4, h, barW / 2);
+    return "M " + x0 + " " + base + " V " + (y + r) + " Q " + x0 + " " + y + " " + (x0 + r) + " " + y +
+      " H " + (x1 - r) + " Q " + x1 + " " + y + " " + x1 + " " + (y + r) + " V " + base + " Z";
   }
-  const mtdLine = hasMTD ? "M " + X(solidEnd - 1) + " " + Y(pts[solidEnd - 1].v) + " L " + X(pts.length - 1) + " " + Y(pts[pts.length - 1].v) : "";
 
   const grid = [0, 1, 2, 3].map(function (i) {
     const v = vMin + (i / 3) * (vMax - vMin);
@@ -134,11 +137,14 @@ export function TrendsChart(props) {
         }}>
         <svg width={width} height={height} style={{ overflow: "visible", display: "block" }} role="img" aria-label={M.name + " by month. " + summaryText}>
           <defs>
-            <linearGradient id="areaG" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" style={{ stopColor: M.color, stopOpacity: 0.12 }} />
-              <stop offset="100%" style={{ stopColor: M.color, stopOpacity: 0 }} />
-            </linearGradient>
+            {/* month-to-date bar: 45° hatch in the series colour, so "partial" isn't colour-alone */}
+            <pattern id="mtdHatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="6" height="6" style={{ fill: M.color }} opacity="0.18" />
+              <line x1="0" y1="0" x2="0" y2="6" style={{ stroke: M.color }} strokeWidth="2.5" opacity="0.75" />
+            </pattern>
           </defs>
+
+          {act != null && <rect x={X(act) - band / 2 + 1} y={pad.t} width={band - 2} height={base - pad.t} rx="6" className="col-hover" />}
 
           {grid.map(function (g, i) {
             return (
@@ -149,21 +155,17 @@ export function TrendsChart(props) {
             );
           })}
 
-          <path d={area} fill="url(#areaG)" />
-          <path d={line} fill="none" style={{ stroke: M.color }} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          {hasMTD && <path d={mtdLine} fill="none" style={{ stroke: M.color }} strokeWidth="2.5" strokeDasharray="2 5" strokeLinecap="round" opacity="0.6" />}
+          {pts.map(function (p, i) {
+            const mtd = hasMTD && i === pts.length - 1;
+            return <path key={i} d={barPath(i)} fill={mtd ? "url(#mtdHatch)" : undefined}
+              style={mtd ? undefined : { fill: M.color }} opacity={act != null && act !== i ? 0.55 : 1} className="bar" />;
+          })}
 
           {pts.map(function (p, i) {
             if (i % labelEvery !== (pts.length - 1) % labelEvery) return null;
             return <text key={i} x={X(i)} y={height - pad.b + 22} textAnchor="middle" className={"axis-text" + (i === selIdx ? " on" : "")}>{p.label.split(" ")[0]}</text>;
           })}
 
-          {act != null && (
-            <g>
-              <line x1={X(act)} y1={pad.t} x2={X(act)} y2={height - pad.b} className="cursor-line" />
-              <circle cx={X(act)} cy={Y(pts[act].v)} r="5" className="dot-knob" style={{ stroke: M.color }} strokeWidth="2.5" />
-            </g>
-          )}
         </svg>
 
         {hoverIndex != null && (

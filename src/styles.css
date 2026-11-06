@@ -197,10 +197,11 @@ body.gm-loading .kpi-value{animation:pulse 1.3s ease-in-out infinite;}
 .chart-host{position:relative;flex:none;height:260px;min-height:240px;width:100%;margin:4px 0 16px;touch-action:pan-y;}
 .chart-host>svg{position:absolute;left:0;top:0;}
 .grid-line{stroke:var(--sep);stroke-width:1;stroke-dasharray:3 5;}
-.cursor-line{stroke:var(--label-3);stroke-width:1;}
+.col-hover{fill:var(--fill);}
+.bar{transition:opacity .15s ease;}
+@media (prefers-reduced-motion:reduce){.bar{transition:none;}}
 .axis-text{fill:var(--label-2);font-size:11px;font-family:var(--font);}
 .axis-text.on{fill:var(--label);font-weight:700;}
-.dot-knob{fill:var(--card);}
 .tip{position:absolute;z-index:30;pointer-events:none;border-radius:14px;padding:10px 12px;min-width:150px;}
 .tip-h{font-size:12px;color:var(--label-2);font-weight:500;}
 .tip-v{font-family:var(--font-display);font-size:20px;font-weight:700;margin-top:1px;}
