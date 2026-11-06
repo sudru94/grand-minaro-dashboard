@@ -2,6 +2,7 @@
    Values come from the Google Sheet (untrusted), so string cells are guarded
    against CSV formula injection before quoting. */
 import { categoryOf } from "./gm-core.jsx";
+import { STAGES, stageOf, daysBetween } from "./gm-content-source.js";
 
 function esc(v) {
   if (typeof v === "number") return isFinite(v) ? String(v) : "";
@@ -57,6 +58,24 @@ export function exportMonthlyCSV(monthly, totals) {
   download(
     "grand-minaro-monthly-summary-" + stamp() + ".csv",
     ["Month", "Spend (LKR)", "Impressions", "Reach", "Frequency", "CPM (LKR)", "Clicks", "CTR (%)", "CPC (LKR)", "Chats Started", "Cost per Chat (LKR)"],
+    rows
+  );
+}
+
+/* Content Tracker: every item with its stage, owner and how long it has been in progress. */
+export function exportContentCSV(items, now) {
+  const order = STAGES.map(function (s) { return s.key; });
+  const iso = function (d) { return d ? d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") : ""; };
+  const rows = items.slice().sort(function (a, b) {
+    return order.indexOf(a.stage) - order.indexOf(b.stage) || (b.start ? b.start.getTime() : 0) - (a.start ? a.start.getTime() : 0);
+  }).map(function (i) {
+    const s = stageOf(i.stage);
+    const days = i.start && i.stage !== "published" ? Math.max(0, daysBetween(i.start, now)) : "";
+    return [i.name, i.stage === "other" ? i.stageLabel : s.label, i.types.join(" + "), i.topics.join(", "), i.staff || "", iso(i.start), iso(i.due), days];
+  });
+  download(
+    "grand-minaro-content-tracker-" + stamp() + ".csv",
+    ["Content", "Stage", "Type", "Topic", "Team member", "Start date", "Due date", "Days in progress"],
     rows
   );
 }
