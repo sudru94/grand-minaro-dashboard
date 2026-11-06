@@ -32,17 +32,16 @@ function LineIcon({ name, size = 18 }) {
     ctr: <><path d="m5 3 14 9-7 1-3 7zM14 14l5 6" /></>,
     arrow: <><path d="M7 17 17 7M7 7h10v10" /></>,
     content: <><rect x="3" y="4" width="18" height="16" rx="3" /><path d="m3 16 5-5 4 4 3-3 6 6" /><circle cx="15.5" cy="9" r="1.5" /></>,
-    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
 
 const NAV_ITEMS = [
+  { id: "content", label: "Content" },
   { id: "overview", label: "Overview" },
   { id: "performance", label: "Performance" },
   { id: "campaigns", label: "Campaigns" },
   { id: "insights", label: "Insights" },
-  { id: "content", label: "Content" },
 ];
 
 function KPICard(p) {
@@ -119,7 +118,7 @@ export default function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [printing, setPrinting] = useState(false);
   const exportTriggerRef = useRef(null);
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activeSection, setActiveSection] = useState(NAV_ITEMS[0].id);
   const [, setTick] = useState(0); // keeps "synced Xm ago" honest between refreshes
   // Content Tracker: last good rows (cache, else baked snapshot) until the live sheet answers
   const [content, setContent] = useState(function () {
@@ -133,7 +132,7 @@ export default function App() {
 
   useEffect(function () {
     function trackSection() {
-      let current = "overview";
+      let current = NAV_ITEMS[0].id;
       NAV_ITEMS.forEach(function (item) {
         const section = document.getElementById(item.id);
         if (section && section.getBoundingClientRect().top <= 180) current = item.id;
@@ -263,9 +262,9 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <a className="skip-link" href="#overview">Skip to dashboard</a>
+      <a className="skip-link" href="#content">Skip to dashboard</a>
       <aside className="sidebar" aria-label="Dashboard sidebar">
-        <a className="sidebar-brand" href="#overview">
+        <a className="sidebar-brand" href="#content">
           <span className="brand-mark"><img src={monoSrc} alt="" /></span>
           <span><strong>Grand Minaro</strong><small>RESORT</small></span>
         </a>
@@ -336,6 +335,10 @@ export default function App() {
       </header>
 
       <main className="wrap">
+        {/* Content Tracker first: what's waiting for management approval is the client's first check */}
+        <section className="content-section" id="content" aria-label="Content tracker">
+          <ContentSection items={content.items} lastSynced={content.lastSynced} now={now} sheetUrl={CONTENT_SHEET.editUrl} printAll={printing} />
+        </section>
         {/* large title + period */}
         <section className="title-row" id="overview" aria-labelledby="dashboard-title">
           <div>
@@ -352,18 +355,6 @@ export default function App() {
             {IC.chevron}
           </label>
         </section>
-
-        {/* client call-to-action: anything sitting with management */}
-        {approvals.count > 0 && (
-          <a className="approval-banner" href="#content">
-            <span className="ab-icon"><LineIcon name="clock" /></span>
-            <span className="ab-text">
-              <strong>{approvals.count} {approvals.count === 1 ? "item is" : "items are"} waiting for management approval</strong>
-              <small>{approvals.oldestDays != null && approvals.oldestDays > 0 ? "Longest wait " + approvals.oldestDays + " day" + (approvals.oldestDays === 1 ? "" : "s") + " · " : ""}see the Content section</small>
-            </span>
-            <span className="ab-go">View <LineIcon name="arrow" size={14} /></span>
-          </a>
-        )}
 
         {/* KPI tiles */}
         <section className="kpi-grid">
@@ -400,9 +391,6 @@ export default function App() {
           <Insights campaigns={campaigns} summary={summary} selectedMonth={sel} cats={cats} />
         </section>
 
-        <section className="content-section" id="content" aria-label="Content tracker">
-          <ContentSection items={content.items} lastSynced={content.lastSynced} now={now} sheetUrl={CONTENT_SHEET.editUrl} printAll={printing} />
-        </section>
       </main>
 
       <footer className="footer wrap">

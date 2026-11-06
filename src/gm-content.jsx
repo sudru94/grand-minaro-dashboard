@@ -141,6 +141,7 @@ function Pipeline(props) {
                 aria-pressed={on} onClick={function () { props.onStage(on ? null : s.key); }}
                 style={{ "--tone": s.tone }}>
                 <span className="pipe-num">Step {idx + 1}</span>
+                {s.key === "approval" && n > 0 && <span className="pipe-flag"><i aria-hidden="true"></i>Action needed</span>}
                 <span className="pipe-count">{n}</span>
                 <span className="pipe-label">{s.label}</span>
               </button>
