@@ -2,8 +2,9 @@
 
 Version 2.3 adds a **Content** section fed by the Grand Minaro Content Tracker sheet: what is
 waiting for management approval (with days waiting), a six-step content pipeline, the full
-content list with type filters, upcoming shoots, and the team. An Overview banner and a sidebar
-badge flag anything waiting for approval. Approvals happen in the sheet; the dashboard follows.
+content list with type filters, upcoming shoots, and the team. It sits at the top of the page,
+first in the sidebar, with a badge counting anything waiting for approval. Approvals happen in
+the sheet; the dashboard follows.
 
 Version 2.2 adds a refined Apple-inspired light workspace, compact performance charts,
 an explicit monthly chart readout, labeled exports, and keyboard/touch chart exploration.
