@@ -1,6 +1,6 @@
 /* Grand Minaro — main app: glass toolbar, title + period, KPI tiles, sections */
 import { useState, useEffect, useCallback, useRef } from "react";
-import { formatLKR, fmtNum, Sparkline, TrendChip } from "./gm-core.jsx";
+import { formatLKR, fmtNum, Sparkline, TrendChip, FATIGUE_FREQ, CountUp } from "./gm-core.jsx";
 import { TrendsChart, CategorySplit } from "./gm-charts.jsx";
 import { Insights, categoryAggregates } from "./gm-insights.jsx";
 import { CampaignTable } from "./gm-table.jsx";
@@ -41,15 +41,15 @@ const NAV_ITEMS = [
 
 function KPICard(p) {
   return (
-    <div className={"kpi kpi-" + p.icon}>
+    <div className={"kpi kpi-" + p.icon} style={{ "--i": p.index }}>
       <div className="kpi-top"><div className="kpi-label">{p.label}{p.badge && <span className="badge">{p.badge}</span>}</div><span className="kpi-icon"><LineIcon name={p.icon} /></span></div>
-      <div className="kpi-value">{p.value}</div>
+      <div className="kpi-value"><CountUp value={p.num} format={p.format} /></div>
       <div className="kpi-foot">
         <div>
           <div className="kpi-sub">{p.sub}</div>
           {p.trend != null && <TrendChip value={p.trend} invert={p.trendInvert} label={p.trendLabel} />}
         </div>
-        {p.spark && <Sparkline data={p.spark.data} color={p.spark.color} id={p.label} />}
+        {p.spark && <Sparkline key={p.spark.data.join(",")} data={p.spark.data} color={p.spark.color} id={p.label} />}
       </div>
     </div>
   );
@@ -63,10 +63,11 @@ function computeKPIs(summary, selectedMonth) {
     spend = summary.reduce(function (s, m) { return s + m.spend; }, 0);
     imps = summary.reduce(function (s, m) { return s + m.impressions; }, 0);
     // de-duplicated grand-total reach & frequency come straight off the sheet's GRAND TOTAL row
-    reach = totals && totals.reach ? totals.reach : 1914301;
+    // fallback = sum of monthly reach, which is how the sheet's GRAND TOTAL is built
+    reach = totals && totals.reach ? totals.reach : summary.reduce(function (s, m) { return s + m.reach; }, 0);
     clicks = summary.reduce(function (s, m) { return s + m.clicks; }, 0);
     chats = summary.reduce(function (s, m) { return s + m.msgConversations; }, 0);
-    freq = totals && totals.frequency ? totals.frequency : 2.40;
+    freq = totals && totals.frequency ? totals.frequency : (reach > 0 ? imps / reach : 0);
   } else {
     const idx = summary.findIndex(function (m) { return m.month === selectedMonth; });
     const it = summary[idx];
@@ -106,8 +107,8 @@ export default function App() {
   const [campaigns, setCampaigns] = useState(CACHED ? CACHED.campaigns : (window.GM_CAMPAIGNS || []));
   const [sync, setSync] = useState(CACHED
     ? { state: "live", at: CACHED.at, tabs: CACHED.tabs }
-    : { state: "loading", at: null, tabs: 11 });
-  const [sel, setSel] = useState("All Time");
+    : { state: "loading", at: null, tabs: (window.GM_MONTHLY || []).length + 1 });
+  const [selRaw, setSel] = useState("All Time");
   const [exportOpen, setExportOpen] = useState(false);
   const [printing, setPrinting] = useState(false);
   const exportTriggerRef = useRef(null);
@@ -131,6 +132,20 @@ export default function App() {
     }
     window.addEventListener("scroll", trackSection, { passive: true });
     return function () { window.removeEventListener("scroll", trackSection); };
+  }, []);
+
+  // Apple-style scroll reveal: lower sections ease up as they enter the viewport
+  useEffect(function () {
+    const els = Array.prototype.slice.call(document.querySelectorAll(".reveal"));
+    if (!("IntersectionObserver" in window)) { els.forEach(function (el) { el.classList.add("in"); }); return; }
+    const io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { threshold: 0.05, rootMargin: "0px 0px -6% 0px" });
+    els.forEach(function (el) { io.observe(el); });
+    // printing must never catch a section mid-reveal
+    function showAll() { els.forEach(function (el) { el.classList.add("in"); }); }
+    window.addEventListener("beforeprint", showAll);
+    return function () { io.disconnect(); window.removeEventListener("beforeprint", showAll); };
   }, []);
 
   // close the export menu on any outside click or Escape
@@ -164,7 +179,7 @@ export default function App() {
         setCampaigns(d.campaigns);
         setSync({ state: "live", at: d.at, tabs: d.tabs });
       } else {
-        setSync({ state: "baked", at: null, tabs: 11 });
+        setSync({ state: "baked", at: null, tabs: (window.GM_MONTHLY || []).length + 1 });
       }
     }).catch(function (e) {
       console.warn("Live sheet sync failed — showing last good data:", e);
@@ -208,10 +223,12 @@ export default function App() {
     return function () { document.body.classList.remove("gm-loading"); };
   }, [sync.state]);
 
-  // guard: if a month is selected that the live data doesn't contain, fall back to All Time
-  useEffect(function () {
-    if (sel !== "All Time" && !summary.some(function (m) { return m.month === sel; })) setSel("All Time");
-  }, [summary]);
+  // guard: if a month is selected that the live data doesn't contain (tab renamed or
+  // removed), render All Time immediately — computing KPIs for a missing month would
+  // throw and blank the page — and reset the picker to match.
+  const selKnown = selRaw === "All Time" || summary.some(function (m) { return m.month === selRaw; });
+  const sel = selKnown ? selRaw : "All Time";
+  useEffect(function () { if (!selKnown) setSel("All Time"); }, [selKnown]);
 
   const months = ["All Time"].concat(summary.map(function (m) { return m.month; }).slice().reverse());
   const k = computeKPIs(summary, sel);
@@ -295,7 +312,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="wrap fade-in">
+      <main className="wrap">
         {/* large title + period */}
         <section className="title-row" id="overview" aria-labelledby="dashboard-title">
           <div>
@@ -315,36 +332,36 @@ export default function App() {
 
         {/* KPI tiles */}
         <section className="kpi-grid">
-          <KPICard icon="spend" label="Total spend" value={formatLKR(k.spend, true)}
+          <KPICard index={0} icon="spend" label="Total spend" num={k.spend} format={function (n) { return formatLKR(n, true); }}
             sub={"CPM " + formatLKR(k.cpm) + " · " + fmtNum(k.imps) + " impressions"}
             trend={k.spendTr} trendLabel={k.prevLabel} spark={{ data: k.s_spend, color: "var(--blue)" }} />
-          <KPICard icon="chats" label="Chats started" value={k.chats.toLocaleString()}
+          <KPICard index={1} icon="chats" label="Chats started" num={k.chats} format={function (n) { return Math.round(n).toLocaleString("en-US"); }}
             sub={formatLKR(k.cpa) + " per chat"}
             trend={k.chatsTr} trendLabel={k.prevLabel} spark={{ data: k.s_chats, color: "var(--green)" }} />
-          <KPICard icon="reach" label="People reached" value={fmtNum(k.reach)}
+          <KPICard index={2} icon="reach" label="People reached" num={k.reach} format={function (n) { return fmtNum(n); }}
             sub={"Frequency " + k.freq.toFixed(2) + "×"}
             trend={k.reachTr} trendLabel={k.prevLabel} spark={{ data: k.s_reach, color: "var(--blue)" }}
-            badge={k.freq >= 3.3 ? "Fatigue" : null} />
-          <KPICard icon="ctr" label="Click-through rate" value={k.ctr.toFixed(2) + "%"}
+            badge={k.freq > FATIGUE_FREQ ? "Fatigue" : null} />
+          <KPICard index={3} icon="ctr" label="Click-through rate" num={k.ctr} format={function (n) { return n.toFixed(2) + "%"; }}
             sub={fmtNum(k.clicks) + " link clicks"}
             spark={{ data: k.s_ctr, color: "var(--accent)" }} />
         </section>
 
-        <section className="split charts-split" id="performance" aria-label="Performance charts">
+        <section className="split charts-split reveal" id="performance" aria-label="Performance charts">
           <TrendsChart monthly={summary} selectedMonth={sel} />
           <CategorySplit cats={cats} period={sel} />
         </section>
 
-        <section className="split highlights-split" aria-label="Campaign highlights">
+        <section className="split highlights-split reveal" aria-label="Campaign highlights">
           <ActiveCampaigns campaigns={campaigns} />
-          <TopCampaign campaigns={campaigns} selectedMonth={sel} />
+          <TopCampaign campaigns={campaigns} summary={summary} selectedMonth={sel} />
         </section>
 
-        <section className="section" id="campaigns" aria-label="Campaign explorer">
+        <section className="section reveal" id="campaigns" aria-label="Campaign explorer">
           <CampaignTable campaigns={campaigns} selectedMonth={sel} printAll={printing} />
         </section>
 
-        <section className="section" id="insights" aria-label="Performance insights">
+        <section className="section reveal" id="insights" aria-label="Performance insights">
           <Insights campaigns={campaigns} summary={summary} selectedMonth={sel} cats={cats} />
         </section>
       </main>

@@ -1,5 +1,5 @@
 /* Grand Minaro — Insights: rule-based findings for the selected period */
-import { formatLKR, fmtNum, categoryOf, CAT_TONE } from "./gm-core.jsx";
+import { formatLKR, fmtNum, categoryOf, CAT_TONE, FATIGUE_FREQ, periodAvgCPA } from "./gm-core.jsx";
 
 export function categoryAggregates(campaigns, selectedMonth) {
   const isAll = selectedMonth === "All Time";
@@ -16,10 +16,7 @@ export function categoryAggregates(campaigns, selectedMonth) {
 
 function buildFindings(campaigns, summary, selectedMonth, cats) {
   const isAll = selectedMonth === "All Time";
-  const sel = campaigns.filter(function (c) { return isAll || c.month === selectedMonth; });
-  const totalSpend = sel.reduce(function (s, c) { return s + c.spend; }, 0);
-  const totalChats = sel.reduce(function (s, c) { return s + c.msgConversations; }, 0);
-  const avgCPA = totalChats > 0 ? totalSpend / totalChats : 0;
+  const avgCPA = periodAvgCPA(summary, selectedMonth); // same figure as the KPI tile
   const ms = summary.find(function (s) { return s.month === selectedMonth; });
   const out = [];
   const C = {};
@@ -28,14 +25,19 @@ function buildFindings(campaigns, summary, selectedMonth, cats) {
   if (C.Wedding.chats > 0 && avgCPA > 0 && C.Wedding.cpa > avgCPA * 1.15) {
     out.push({ type: "alert", title: "Wedding campaigns running hot on CPA", desc: "Wedding ad sets convert chats at " + formatLKR(C.Wedding.cpa) + " — about " + Math.round((C.Wedding.cpa / avgCPA - 1) * 100) + "% above the " + formatLKR(avgCPA) + " account average. Tighten qualification before scaling." });
   }
-  if (ms && ms.frequency > 3.2) {
+  if (ms && ms.frequency > FATIGUE_FREQ) {
     out.push({ type: "alert", title: "Frequency fatigue risk", desc: "Average frequency hit " + ms.frequency.toFixed(2) + "x in " + selectedMonth + ". Audiences are seeing repeat creative; refresh assets to protect the " + ms.ctr.toFixed(2) + "% CTR." });
   }
-  if (C.Rooms.chats > 0) {
-    out.push({ type: "success", title: "Rooms is your efficiency engine", desc: "Rooms bookings generate chats at just " + formatLKR(C.Rooms.cpa) + " each — the leanest cost per conversation in the account. Strong candidate for incremental budget." });
+  // package claims are derived from the numbers, never assumed
+  const pkgs = cats.filter(function (c) { return c.key !== "Other" && c.chats > 0; });
+  const allChats = cats.reduce(function (s, c) { return s + c.chats; }, 0);
+  const leanest = pkgs.slice().sort(function (a, b) { return a.cpa - b.cpa; })[0];
+  const volume = pkgs.slice().sort(function (a, b) { return b.chats - a.chats; })[0];
+  if (pkgs.length > 1 && leanest && avgCPA > 0 && leanest.cpa < avgCPA) {
+    out.push({ type: "success", title: leanest.key + " is your efficiency engine", desc: leanest.key + " campaigns generate chats at " + formatLKR(leanest.cpa) + " each — the leanest cost per conversation of any package, " + Math.round((1 - leanest.cpa / avgCPA) * 100) + "% below the " + formatLKR(avgCPA) + " account average. Strong candidate for incremental budget." });
   }
-  if (C.Couple.chats > 0) {
-    out.push({ type: "tip", title: "Couple packages carry the volume", desc: "Couple campaigns drive " + fmtNum(C.Couple.chats) + " chats at " + formatLKR(C.Couple.cpa) + " each — the largest conversation source. Keep it funded and rotate fresh offers." });
+  if (pkgs.length > 1 && volume && allChats > 0) {
+    out.push({ type: "tip", title: volume.key + " carries the volume", desc: volume.key + " campaigns drive " + fmtNum(volume.chats) + " chats (" + Math.round(volume.chats / allChats * 100) + "% of all chats) at " + formatLKR(volume.cpa) + " each — the largest conversation source. Keep it funded and rotate fresh offers." });
   }
   if (isAll) {
     const best = summary.slice().filter(function (s) { return s.costPerMsgConv > 0; }).sort(function (a, b) { return a.costPerMsgConv - b.costPerMsgConv; })[0];
@@ -47,7 +49,13 @@ function buildFindings(campaigns, summary, selectedMonth, cats) {
 
 export function Insights(props) {
   const res = buildFindings(props.campaigns, props.summary, props.selectedMonth, props.cats);
-  const ICON = { alert: "!", success: "↑", tip: "✦" };
+  // SF Symbols–style glyphs: exclamationmark.triangle, arrow.up.right, sparkle
+  const svg = function (d) { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>; };
+  const ICON = {
+    alert: svg(<><path d="M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9.5v4M12 17h.01" /></>),
+    success: svg(<path d="M7 17 17 7M8 7h9v9" />),
+    tip: svg(<path d="M12 3c.5 4.3 2.7 6.5 7 7-4.3.5-6.5 2.7-7 7-.5-4.3-2.7-6.5-7-7 4.3-.5 6.5-2.7 7-7z" />),
+  };
   return (
     <div className="card">
       <div className="card-head">
@@ -59,7 +67,7 @@ export function Insights(props) {
       <ul className="insights">
         {res.findings.slice(0, 4).map(function (f, i) {
           return (
-            <li key={i} className={"insight i-" + f.type}>
+            <li key={i} className={"insight i-" + f.type} style={{ "--i": i }}>
               <span className="ii" aria-hidden="true">{ICON[f.type]}</span>
               <div>
                 <p className="it">{f.title}</p>

@@ -57,6 +57,13 @@ function isMeta(name) {
     s.indexOf("note") === 0;
 }
 
+// month labels look exactly like "Aug 2025" — a title row such as
+// "Monthly Summary (Aug 2025 – Nov 2026)" must not become a month
+var MONTH_LABEL = /^[A-Z][a-z]{2} 20\d{2}$/;
+
+// title / "Source: …" / header rows carry no figures; a real campaign row always does
+function hasFigures(o) { return o.spend !== 0 || o.impressions !== 0 || o.clicks !== 0; }
+
 function row11(r, extra) {
   var o = {
     spend: num(r[1]), impressions: num(r[2]), reach: num(r[3]), frequency: num(r[4]),
@@ -71,7 +78,7 @@ function parseSummary(rows) {
   var out = [];
   for (var i = 1; i < rows.length; i++) {
     var month = (rows[i][0] || "").trim();
-    if (isMeta(month) || !/20\d{2}/.test(month)) continue;
+    if (isMeta(month) || !MONTH_LABEL.test(month)) continue;
     out.push(row11(rows[i], { month: month }));
   }
   return out;
@@ -92,8 +99,10 @@ function parseCampaigns(rows, month) {
   var out = [];
   for (var i = 1; i < rows.length; i++) {
     var name = (rows[i][0] || "").trim();
-    if (isMeta(name)) continue;
-    out.push(row11(rows[i], { campaignName: name, month: month }));
+    // a month label here means gviz served the Summary tab for a missing month tab
+    if (isMeta(name) || MONTH_LABEL.test(name)) continue;
+    var row = row11(rows[i], { campaignName: name, month: month });
+    if (hasFigures(row)) out.push(row);
   }
   return out;
 }
