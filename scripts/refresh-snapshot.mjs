@@ -41,6 +41,9 @@ function isMeta(name) {
   return s === "" || s.startsWith("total") || s.startsWith("grand total") || s.startsWith("note");
 }
 
+const MONTH_LABEL = /^[A-Z][a-z]{2} 20\d{2}$/;
+const hasFigures = (o) => o.spend !== 0 || o.impressions !== 0 || o.clicks !== 0;
+
 function row11(r, extra) {
   return {
     ...extra,
@@ -60,9 +63,15 @@ const summaryRows = await fetchRows(`${BASE}&gid=${SUMMARY_GID}`);
 const monthly = [];
 for (let i = 1; i < summaryRows.length; i++) {
   const month = (summaryRows[i][0] || "").trim();
-  if (isMeta(month) || !/20\d{2}/.test(month)) continue;
+  if (isMeta(month) || !MONTH_LABEL.test(month)) continue;
   const { spend, impressions, reach, frequency, cpm, clicks, ctr, cpc, msgConversations, costPerMsgConv } = row11(summaryRows[i], {});
   monthly.push({ month, spend, impressions, reach, frequency, cpm, clicks, ctr, cpc, msgConversations, costPerMsgConv });
+}
+// the GRAND TOTAL row carries the all-account reach & frequency used by "All Time"
+let totals = null;
+for (let i = 1; i < summaryRows.length; i++) {
+  const name = (summaryRows[i][0] || "").trim().toLowerCase();
+  if (name.startsWith("grand total") || name.startsWith("total")) { totals = row11(summaryRows[i], {}); break; }
 }
 if (!monthly.length) throw new Error("No months parsed from the Monthly Summary tab — aborting (existing snapshot left untouched).");
 
@@ -71,7 +80,8 @@ for (const m of monthly) {
   const rows = await fetchRows(`${BASE}&sheet=${encodeURIComponent(m.month)}`);
   for (let i = 1; i < rows.length; i++) {
     const name = (rows[i][0] || "").trim();
-    if (isMeta(name)) continue;
+    if (isMeta(name) || MONTH_LABEL.test(name)) continue;
+    if (!hasFigures(row11(rows[i], {}))) continue;
     const { spend, impressions, reach, frequency, cpm, clicks, ctr, cpc, msgConversations, costPerMsgConv } = row11(rows[i], {});
     campaigns.push({ campaignName: name, month: m.month, spend, impressions, reach, frequency, cpm, clicks, ctr, cpc, msgConversations, costPerMsgConv });
   }
@@ -89,6 +99,8 @@ const out = `/* Grand Minaro — baked Meta Ads snapshot (${range}). Spend in LK
 window.GM_MONTHLY = ${JSON.stringify(monthly, null, 2)};
 
 window.GM_CAMPAIGNS = ${JSON.stringify(campaigns, null, 2)};
+
+window.GM_TOTALS = ${JSON.stringify(totals, null, 2)};
 `;
 
 const dest = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "gm-data.js");

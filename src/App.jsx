@@ -63,10 +63,11 @@ function computeKPIs(summary, selectedMonth) {
     spend = summary.reduce(function (s, m) { return s + m.spend; }, 0);
     imps = summary.reduce(function (s, m) { return s + m.impressions; }, 0);
     // de-duplicated grand-total reach & frequency come straight off the sheet's GRAND TOTAL row
-    reach = totals && totals.reach ? totals.reach : 1914301;
+    // fallback = sum of monthly reach, which is how the sheet's GRAND TOTAL is built
+    reach = totals && totals.reach ? totals.reach : summary.reduce(function (s, m) { return s + m.reach; }, 0);
     clicks = summary.reduce(function (s, m) { return s + m.clicks; }, 0);
     chats = summary.reduce(function (s, m) { return s + m.msgConversations; }, 0);
-    freq = totals && totals.frequency ? totals.frequency : 2.40;
+    freq = totals && totals.frequency ? totals.frequency : (reach > 0 ? imps / reach : 0);
   } else {
     const idx = summary.findIndex(function (m) { return m.month === selectedMonth; });
     const it = summary[idx];
