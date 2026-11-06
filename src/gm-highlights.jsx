@@ -1,5 +1,5 @@
 /* Grand Minaro — highlights: ActiveCampaigns (running this month) + TopCampaign spotlight */
-import { formatLKR, fmtNum, CatTag } from "./gm-core.jsx";
+import { formatLKR, fmtNum, CatTag, periodAvgCPA } from "./gm-core.jsx";
 
 // the current calendar month, formatted like the sheet labels ("Jun 2026")
 export function currentMonthLabel() {
@@ -83,9 +83,7 @@ export function ActiveCampaigns(props) {
 export function TopCampaign(props) {
   const isAll = props.selectedMonth === "All Time";
   const rows = props.campaigns.filter(function (c) { return isAll || c.month === props.selectedMonth; });
-  const totalSpend = rows.reduce(function (s, c) { return s + c.spend; }, 0);
-  const totalChats = rows.reduce(function (s, c) { return s + c.msgConversations; }, 0);
-  const avgCPA = totalChats > 0 ? totalSpend / totalChats : 0;
+  const avgCPA = periodAvgCPA(props.summary || [], props.selectedMonth);
 
   const ranked = aggregateByName(rows)
     .filter(function (a) { return a.chats >= 5 && a.cpa > 0; })

@@ -22,14 +22,28 @@ export function fmtNum(n, compact) {
 export const CAT_TONE = { Rooms: "var(--blue)", Couple: "var(--green)", Wedding: "var(--accent)", Other: "var(--gray)" };
 export function categoryOf(name) {
   const n = (name || "").toLowerCase();
-  if (n.includes("room")) return "Rooms";
+  // "couple" before "room": combo names like "Couple Package + Rooms" are couple packages
   if (n.includes("couple")) return "Couple";
+  if (n.includes("room")) return "Rooms";
   if (n.includes("wedding")) return "Wedding";
   return "Other";
 }
 export function CatTag(props) {
   const k = categoryOf(props.name);
   return <span className="cat-tag"><i style={{ background: CAT_TONE[k] }}></i>{k}</span>;
+}
+
+// ---------- shared metrics ----------
+// one frequency threshold for both the KPI "Fatigue" badge and the Insights alert
+export const FATIGUE_FREQ = 3.2;
+
+// account cost per chat for a period, from the Monthly Summary rows — the same
+// source as the KPI tile, so every "average" on the page agrees
+export function periodAvgCPA(summary, selectedMonth) {
+  const rows = selectedMonth === "All Time" ? summary : summary.filter(function (m) { return m.month === selectedMonth; });
+  const spend = rows.reduce(function (s, m) { return s + m.spend; }, 0);
+  const chats = rows.reduce(function (s, m) { return s + m.msgConversations; }, 0);
+  return chats > 0 ? spend / chats : 0;
 }
 
 // ---------- tiny atoms ----------

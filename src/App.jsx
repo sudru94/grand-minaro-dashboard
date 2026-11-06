@@ -1,6 +1,6 @@
 /* Grand Minaro — main app: glass toolbar, title + period, KPI tiles, sections */
 import { useState, useEffect, useCallback, useRef } from "react";
-import { formatLKR, fmtNum, Sparkline, TrendChip } from "./gm-core.jsx";
+import { formatLKR, fmtNum, Sparkline, TrendChip, FATIGUE_FREQ } from "./gm-core.jsx";
 import { TrendsChart, CategorySplit } from "./gm-charts.jsx";
 import { Insights, categoryAggregates } from "./gm-insights.jsx";
 import { CampaignTable } from "./gm-table.jsx";
@@ -107,7 +107,7 @@ export default function App() {
   const [sync, setSync] = useState(CACHED
     ? { state: "live", at: CACHED.at, tabs: CACHED.tabs }
     : { state: "loading", at: null, tabs: 11 });
-  const [sel, setSel] = useState("All Time");
+  const [selRaw, setSel] = useState("All Time");
   const [exportOpen, setExportOpen] = useState(false);
   const [printing, setPrinting] = useState(false);
   const exportTriggerRef = useRef(null);
@@ -208,10 +208,12 @@ export default function App() {
     return function () { document.body.classList.remove("gm-loading"); };
   }, [sync.state]);
 
-  // guard: if a month is selected that the live data doesn't contain, fall back to All Time
-  useEffect(function () {
-    if (sel !== "All Time" && !summary.some(function (m) { return m.month === sel; })) setSel("All Time");
-  }, [summary]);
+  // guard: if a month is selected that the live data doesn't contain (tab renamed or
+  // removed), render All Time immediately — computing KPIs for a missing month would
+  // throw and blank the page — and reset the picker to match.
+  const selKnown = selRaw === "All Time" || summary.some(function (m) { return m.month === selRaw; });
+  const sel = selKnown ? selRaw : "All Time";
+  useEffect(function () { if (!selKnown) setSel("All Time"); }, [selKnown]);
 
   const months = ["All Time"].concat(summary.map(function (m) { return m.month; }).slice().reverse());
   const k = computeKPIs(summary, sel);
@@ -324,7 +326,7 @@ export default function App() {
           <KPICard icon="reach" label="People reached" value={fmtNum(k.reach)}
             sub={"Frequency " + k.freq.toFixed(2) + "×"}
             trend={k.reachTr} trendLabel={k.prevLabel} spark={{ data: k.s_reach, color: "var(--blue)" }}
-            badge={k.freq >= 3.3 ? "Fatigue" : null} />
+            badge={k.freq > FATIGUE_FREQ ? "Fatigue" : null} />
           <KPICard icon="ctr" label="Click-through rate" value={k.ctr.toFixed(2) + "%"}
             sub={fmtNum(k.clicks) + " link clicks"}
             spark={{ data: k.s_ctr, color: "var(--accent)" }} />
@@ -337,7 +339,7 @@ export default function App() {
 
         <section className="split highlights-split" aria-label="Campaign highlights">
           <ActiveCampaigns campaigns={campaigns} />
-          <TopCampaign campaigns={campaigns} selectedMonth={sel} />
+          <TopCampaign campaigns={campaigns} summary={summary} selectedMonth={sel} />
         </section>
 
         <section className="section" id="campaigns" aria-label="Campaign explorer">
