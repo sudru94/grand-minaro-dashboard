@@ -17,7 +17,7 @@ function gidUrl(gid) { return BASE + "&gid=" + gid + "&_=" + Date.now(); }
 function nameUrl(name) { return BASE + "&sheet=" + encodeURIComponent(name) + "&_=" + Date.now(); }
 
 // RFC-4180-ish CSV parser -> array of rows (arrays of strings)
-function parseCSV(text) {
+export function parseCSV(text) {
   var rows = [], row = [], field = "", q = false, i = 0, n = text.length;
   while (i < n) {
     var c = text.charAt(i);

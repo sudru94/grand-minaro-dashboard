@@ -7,6 +7,9 @@ import { CampaignTable } from "./gm-table.jsx";
 import { ActiveCampaigns, TopCampaign } from "./gm-highlights.jsx";
 import { exportCampaignsCSV, exportMonthlyCSV } from "./gm-export.js";
 import { fetchLiveData, loadCachedData, GM_SHEET } from "./gm-source.js";
+import { fetchContentRows, loadCachedContent, normalizeContent, CONTENT_SHEET } from "./gm-content-source.js";
+import { ContentSection, approvalSummary } from "./gm-content.jsx";
+import { exportContentCSV } from "./gm-export.js";
 import monoSrc from "../assets/gm-monogram.png";
 
 /* ---- inline icons ---- */
@@ -28,6 +31,8 @@ function LineIcon({ name, size = 18 }) {
     reach: <><circle cx="9" cy="8" r="3" /><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6M21 20v-2a6 6 0 0 0-4-5" /></>,
     ctr: <><path d="m5 3 14 9-7 1-3 7zM14 14l5 6" /></>,
     arrow: <><path d="M7 17 17 7M7 7h10v10" /></>,
+    content: <><rect x="3" y="4" width="18" height="16" rx="3" /><path d="m3 16 5-5 4 4 3-3 6 6" /><circle cx="15.5" cy="9" r="1.5" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -37,6 +42,7 @@ const NAV_ITEMS = [
   { id: "performance", label: "Performance" },
   { id: "campaigns", label: "Campaigns" },
   { id: "insights", label: "Insights" },
+  { id: "content", label: "Content" },
 ];
 
 function KPICard(p) {
@@ -100,6 +106,7 @@ function relTime(ts) {
 // hydrate once from the last successful sync so repeat visits paint instantly
 const CACHED = loadCachedData();
 if (CACHED && CACHED.totals) window.GM_TOTALS = CACHED.totals;
+const CACHED_CONTENT = loadCachedContent();
 
 export default function App() {
   const sheetUrl = GM_SHEET.editUrl;
@@ -114,6 +121,10 @@ export default function App() {
   const exportTriggerRef = useRef(null);
   const [activeSection, setActiveSection] = useState("overview");
   const [, setTick] = useState(0); // keeps "synced Xm ago" honest between refreshes
+  // Content Tracker: last good rows (cache, else baked snapshot) until the live sheet answers
+  const [content, setContent] = useState(function () {
+    return normalizeContent(CACHED_CONTENT ? CACHED_CONTENT.rows : (window.GM_CONTENT_ROWS || []));
+  });
 
   useEffect(function () {
     const id = setInterval(function () { setTick(function (t) { return t + 1; }); }, 30000);
@@ -127,7 +138,7 @@ export default function App() {
         const section = document.getElementById(item.id);
         if (section && section.getBoundingClientRect().top <= 180) current = item.id;
       });
-      if (window.scrollY > 0 && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 8) current = "insights";
+      if (window.scrollY > 0 && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 8) current = NAV_ITEMS[NAV_ITEMS.length - 1].id;
       setActiveSection(current);
     }
     window.addEventListener("scroll", trackSection, { passive: true });
@@ -170,6 +181,9 @@ export default function App() {
 
   const loadLive = useCallback(function (quiet) {
     if (quiet !== true) setSync(function (s) { return { state: "loading", at: s.at, tabs: s.tabs }; });
+    // the Content Tracker is a separate sheet; it fails soft and keeps showing its last good rows
+    fetchContentRows().then(function (d) { setContent(normalizeContent(d.rows)); })
+      .catch(function (e) { console.warn("Content sheet sync failed — showing last good data:", e); });
     fetchLiveData().then(function (d) {
       if (d && d.monthly && d.monthly.length) {
         window.GM_MONTHLY = d.monthly;
@@ -234,6 +248,9 @@ export default function App() {
   const k = computeKPIs(summary, sel);
   const cats = categoryAggregates(campaigns, sel);
 
+  const now = new Date();
+  const approvals = approvalSummary(content.items, now);
+
   const monthCount = summary.length;
   const rangeLabel = monthCount ? summary[0].month + " – " + summary[monthCount - 1].month : "";
 
@@ -255,7 +272,10 @@ export default function App() {
         <div className="sidebar-label">WORKSPACE</div>
         <nav className="side-nav" aria-label="Dashboard sections">
           {NAV_ITEMS.map(function (item) {
-            return <a key={item.id} href={"#" + item.id} className={activeSection === item.id ? "nav-link active" : "nav-link"} aria-current={activeSection === item.id ? "location" : undefined}><LineIcon name={item.id} /><span>{item.label}</span></a>;
+            const badge = item.id === "content" && approvals.count > 0;
+            return <a key={item.id} href={"#" + item.id} className={activeSection === item.id ? "nav-link active" : "nav-link"} aria-current={activeSection === item.id ? "location" : undefined}
+              aria-label={badge ? item.label + ", " + approvals.count + " waiting for approval" : undefined}>
+              <LineIcon name={item.id} /><span>{item.label}</span>{badge && <span className="nav-badge" aria-hidden="true">{approvals.count}</span>}</a>;
           })}
         </nav>
         <div className="sidebar-bottom">
@@ -298,6 +318,9 @@ export default function App() {
                   <button role="menuitem" onClick={function () { exportMonthlyCSV(summary, window.GM_TOTALS); setExportOpen(false); }}>
                     Monthly Summary (CSV)<small>{monthCount} months</small>
                   </button>
+                  <button role="menuitem" onClick={function () { exportContentCSV(content.items, now); setExportOpen(false); }}>
+                    Content Tracker (CSV)<small>{content.items.length} items · approval status</small>
+                  </button>
                   <button role="menuitem" onClick={function () { setExportOpen(false); setPrinting(true); }}>
                     PDF Report<small>Print-ready dashboard</small>
                   </button>
@@ -329,6 +352,18 @@ export default function App() {
             {IC.chevron}
           </label>
         </section>
+
+        {/* client call-to-action: anything sitting with management */}
+        {approvals.count > 0 && (
+          <a className="approval-banner" href="#content">
+            <span className="ab-icon"><LineIcon name="clock" /></span>
+            <span className="ab-text">
+              <strong>{approvals.count} {approvals.count === 1 ? "item is" : "items are"} waiting for management approval</strong>
+              <small>{approvals.oldestDays != null && approvals.oldestDays > 0 ? "Longest wait " + approvals.oldestDays + " day" + (approvals.oldestDays === 1 ? "" : "s") + " · " : ""}see the Content section</small>
+            </span>
+            <span className="ab-go">View <LineIcon name="arrow" size={14} /></span>
+          </a>
+        )}
 
         {/* KPI tiles */}
         <section className="kpi-grid">
@@ -363,6 +398,10 @@ export default function App() {
 
         <section className="section reveal" id="insights" aria-label="Performance insights">
           <Insights campaigns={campaigns} summary={summary} selectedMonth={sel} cats={cats} />
+        </section>
+
+        <section className="content-section" id="content" aria-label="Content tracker">
+          <ContentSection items={content.items} lastSynced={content.lastSynced} now={now} sheetUrl={CONTENT_SHEET.editUrl} printAll={printing} />
         </section>
       </main>
 

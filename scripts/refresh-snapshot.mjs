@@ -106,3 +106,27 @@ window.GM_TOTALS = ${JSON.stringify(totals, null, 2)};
 const dest = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "gm-data.js");
 writeFileSync(dest, out);
 console.log(`\nWrote ${dest}: ${monthly.length} months, ${campaigns.length} campaigns (${range}).`);
+
+// ---- Content Tracker (separate sheet): raw rows, normalised at runtime by src/gm-content-source.js ----
+const CONTENT_SHEET_ID = "1xxAfJenCV2nNcBLj4N_lq0-xX1HOYp20Z-Pge7Jmq3Q";
+try {
+  const contentRows = await fetchRows(`https://docs.google.com/spreadsheets/d/${CONTENT_SHEET_ID}/gviz/tq?tqx=out:csv&gid=0`);
+  const head = (contentRows[0] || []).map((h) => String(h).trim().toLowerCase());
+  if (!head.includes("task name") || !head.includes("bucket") || contentRows.length < 2) throw new Error("no task rows");
+  const body = contentRows.map((r) => "  " + JSON.stringify(r)).join(",\n");
+  const contentOut = `/* Grand Minaro — baked Content Tracker snapshot (offline fallback for the Content section).
+ * Raw sheet rows (header first); src/gm-content-source.js normalises them at runtime.
+ * Regenerate with: npm run refresh-snapshot
+ * Generated: ${new Date().toISOString()}
+ */
+
+window.GM_CONTENT_ROWS = [
+${body}
+];
+`;
+  const contentDest = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "gm-content-data.js");
+  writeFileSync(contentDest, contentOut);
+  console.log(`Wrote ${contentDest}: ${contentRows.length - 1} content rows.`);
+} catch (e) {
+  console.warn(`Content Tracker snapshot skipped (${e.message}) — existing src/gm-content-data.js left untouched.`);
+}
