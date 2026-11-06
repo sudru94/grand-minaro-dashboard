@@ -358,7 +358,19 @@ table.gm .dim{color:var(--label-2);}
 .pipe-step:hover{background:var(--fill);}
 .pipe-step:active{transform:scale(.97);}
 .pipe-step.on{background:var(--card);box-shadow:inset 0 3px 0 var(--tone),0 0 0 2px var(--tone);}
-.pipe-step.attention{background:#fdf5e6;}
+/* the approval step is the client's call to action: gold ring, glow, gold count, live dot */
+.pipe-step.attention{position:relative;background:linear-gradient(180deg,#fbe9c6,#fdf6e8);
+  box-shadow:inset 0 4px 0 var(--accent),0 0 0 2px var(--accent),0 12px 26px -12px rgba(165,114,34,.6);}
+.pipe-step.attention:hover{background:linear-gradient(180deg,#f8e0b0,#fcf0db);}
+.pipe-step.attention.on{background:linear-gradient(180deg,#fbe9c6,#fdf6e8);box-shadow:inset 0 4px 0 var(--accent),0 0 0 3px var(--accent),0 12px 26px -12px rgba(165,114,34,.6);}
+.pipe-step.attention .pipe-num{color:#7a5212;}
+.pipe-step.attention .pipe-count{color:var(--accent);font-size:36px;}
+.pipe-step.attention .pipe-label{font-weight:700;color:#5c3d0c;}
+.pipe-flag{position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:10px;
+  background:var(--accent);color:#fff;font-size:10px;font-weight:700;letter-spacing:.2px;white-space:nowrap;}
+.pipe-flag i{position:relative;width:6px;height:6px;border-radius:50%;background:#fff;}
+.pipe-flag i::after{content:"";position:absolute;inset:0;border-radius:50%;background:#fff;animation:ping 1.6s var(--ease-out) infinite;}
+@keyframes ping{75%,100%{transform:scale(2.6);opacity:0;}}
 .pipe-num{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--label-2);}
 .pipe-count{font-family:var(--font-display);font-size:30px;font-weight:650;letter-spacing:-.04em;line-height:1.15;font-variant-numeric:tabular-nums;}
 .pipe-label{font-size:12.5px;font-weight:500;line-height:1.3;}
@@ -431,6 +443,8 @@ table.gm .dim{color:var(--label-2);}
   .pipeline li::before{display:none;}
   .pipe-step{padding:12px;}
   .pipe-count{font-size:26px;}
+  .pipe-step.attention .pipe-count{font-size:30px;}
+  .pipe-flag{position:static;margin:4px 0 2px;order:3;}
   .c-row,.shoot-list li,.team-list li{padding:12px 16px;gap:10px;}
   .c-row+.c-row::before,.shoot-list li+li::before,.team-list li+li::before{left:16px;}
   .c-row{flex-wrap:wrap;}
