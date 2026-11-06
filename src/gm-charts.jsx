@@ -1,5 +1,5 @@
 /* Grand Minaro — charts: TrendsChart (monthly columns, one metric at a time) + CategorySplit donut */
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { formatLKR, fmtNum } from "./gm-core.jsx";
 
 // the chart fills its card: track the host's width and height
@@ -26,8 +26,22 @@ const METRICS = {
 };
 
 export function Segmented(props) {
+  // the selection thumb slides between segments (measured, so any label width works)
+  const box = useRef(null);
+  const [thumb, setThumb] = useState(null);
+  useLayoutEffect(function () {
+    const el = box.current; if (!el) return;
+    function measure() {
+      const on = el.querySelector("button.on");
+      setThumb(on ? { x: on.offsetLeft, w: on.offsetWidth } : null);
+    }
+    measure();
+    const ro = new ResizeObserver(measure); ro.observe(el);
+    return function () { ro.disconnect(); };
+  }, [props.value, props.options.length]);
   return (
-    <div className="segmented" role="radiogroup" aria-label={props.label}>
+    <div className="segmented" role="radiogroup" aria-label={props.label} ref={box}>
+      {thumb && <span className="seg-thumb" aria-hidden="true" style={{ transform: "translateX(" + thumb.x + "px)", width: thumb.w + "px" }} />}
       {props.options.map(function (o) {
         const on = o.value === props.value;
         return (
@@ -155,11 +169,15 @@ export function TrendsChart(props) {
             );
           })}
 
-          {pts.map(function (p, i) {
-            const mtd = hasMTD && i === pts.length - 1;
-            return <path key={i} d={barPath(i)} fill={mtd ? "url(#mtdHatch)" : undefined}
-              style={mtd ? undefined : { fill: M.color }} opacity={act != null && act !== i ? 0.55 : 1} className="bar" />;
-          })}
+          <g key={metric + ":" + pts.length + ":" + Math.round(width)} className="bars-grow">
+            {pts.map(function (p, i) {
+              const mtd = hasMTD && i === pts.length - 1;
+              const st = { animationDelay: (i * 28) + "ms" };
+              if (!mtd) st.fill = M.color;
+              return <path key={i} d={barPath(i)} fill={mtd ? "url(#mtdHatch)" : undefined}
+                style={st} opacity={act != null && act !== i ? 0.55 : 1} className="bar" />;
+            })}
+          </g>
 
           {pts.map(function (p, i) {
             if (i % labelEvery !== (pts.length - 1) % labelEvery) return null;
@@ -208,8 +226,16 @@ export function CategorySplit(props) {
       </div>
       <div className="donut-wrap">
         <svg width="152" height="152" viewBox="0 0 180 180" role="img" aria-label={total > 0 ? "Spend by package: " + cats.map(function (c) { return c.key + " " + Math.round(c.spend / denominator * 100) + "%"; }).join(", ") : "No campaign spend available for this period"}>
+          <defs>
+            <mask id="donutSweep" maskUnits="userSpaceOnUse" x="0" y="0" width="180" height="180">
+              <circle key={props.period + ":" + Math.round(total)} className="donut-sweep" cx="90" cy="90" r="65" fill="none" stroke="#fff"
+                strokeWidth="32" pathLength="1" strokeDasharray="1 1" transform="rotate(-90 90 90)" />
+            </mask>
+          </defs>
           {total === 0 && <circle cx="90" cy="90" r="65" fill="none" stroke="var(--fill)" strokeWidth="22" />}
-          {shown.length === 1 ? <circle cx="90" cy="90" r="65" fill="none" stroke={shown[0].tone} strokeWidth="22" /> : arcs.map(function (a, i) { return <path key={i} d={a.d} style={{ fill: a.tone }} />; })}
+          <g mask="url(#donutSweep)">
+            {shown.length === 1 ? <circle cx="90" cy="90" r="65" fill="none" stroke={shown[0].tone} strokeWidth="22" /> : arcs.map(function (a, i) { return <path key={i} d={a.d} style={{ fill: a.tone }} />; })}
+          </g>
           <text x="90" y="86" textAnchor="middle" className="donut-cap">{total > 0 ? "Total" : "No spend"}</text>
           <text x="90" y="106" textAnchor="middle" className="donut-val">{total > 0 ? formatLKR(total, true).replace("LKR ", "") : "—"}</text>
         </svg>

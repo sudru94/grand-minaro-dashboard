@@ -1,4 +1,42 @@
 /* Grand Minaro — shared helpers + visual atoms. */
+import { useState, useEffect, useRef } from "react";
+
+// ---------- motion ----------
+export function prefersReducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/* Counts a number toward its target (ease-out, ~0.8s), restarting from whatever is
+   on screen when the target changes. Instant under reduced motion. */
+export function useCountUp(target, duration) {
+  const dur = duration || 800;
+  const [value, setValue] = useState(prefersReducedMotion() ? target : 0);
+  const shown = useRef(value);
+  useEffect(function () {
+    if (!isFinite(target) || prefersReducedMotion()) { shown.current = target; setValue(target); return; }
+    const from = shown.current, start = performance.now();
+    let raf = 0;
+    function step(now) {
+      const t = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - t, 4); // easeOutQuart: fast start, soft landing
+      const v = from + (target - from) * e;
+      shown.current = v; setValue(v);
+      if (t < 1) raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+    return function () { cancelAnimationFrame(raf); };
+  }, [target, dur]);
+  return value;
+}
+
+/* A formatted number that counts up. The final value is exposed to assistive tech
+   immediately; the ticking digits are hidden from it. */
+export function CountUp(props) {
+  const v = useCountUp(props.value, props.duration);
+  const fmt = props.format || function (n) { return Math.round(n).toLocaleString("en-US"); };
+  return <><span aria-hidden="true">{fmt(v)}</span><span className="sr-only">{fmt(props.value)}</span></>;
+}
 
 // ---------- formatting ----------
 export function formatLKR(n, compact) {
@@ -68,13 +106,13 @@ export function Sparkline(props) {
           <stop offset="100%" style={{ stopColor: props.color, stopOpacity: 0 }} />
         </linearGradient>
       </defs>
-      <polyline
-        points={pts.join(" ") + " " + last[0] + "," + h + " " + p + "," + h}
+      <path className="spark-area"
+        d={"M " + pts.join(" L ") + " L " + last[0] + "," + h + " L " + p + "," + h + " Z"}
         fill={"url(#" + gid + ")"} stroke="none"
       />
-      <polyline points={pts.join(" ")} fill="none" style={{ stroke: props.color }}
+      <path className="spark-line" d={"M " + pts.join(" L ")} pathLength="1" fill="none" style={{ stroke: props.color }}
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r="2.6" style={{ fill: props.color }} />
+      <circle className="spark-dot" cx={last[0]} cy={last[1]} r="2.6" style={{ fill: props.color }} />
     </svg>
   );
 }

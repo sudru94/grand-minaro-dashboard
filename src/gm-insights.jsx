@@ -49,7 +49,13 @@ function buildFindings(campaigns, summary, selectedMonth, cats) {
 
 export function Insights(props) {
   const res = buildFindings(props.campaigns, props.summary, props.selectedMonth, props.cats);
-  const ICON = { alert: "!", success: "↑", tip: "✦" };
+  // SF Symbols–style glyphs: exclamationmark.triangle, arrow.up.right, sparkle
+  const svg = function (d) { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">{d}</svg>; };
+  const ICON = {
+    alert: svg(<><path d="M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9.5v4M12 17h.01" /></>),
+    success: svg(<path d="M7 17 17 7M8 7h9v9" />),
+    tip: svg(<path d="M12 3c.5 4.3 2.7 6.5 7 7-4.3.5-6.5 2.7-7 7-.5-4.3-2.7-6.5-7-7 4.3-.5 6.5-2.7 7-7z" />),
+  };
   return (
     <div className="card">
       <div className="card-head">
@@ -61,7 +67,7 @@ export function Insights(props) {
       <ul className="insights">
         {res.findings.slice(0, 4).map(function (f, i) {
           return (
-            <li key={i} className={"insight i-" + f.type}>
+            <li key={i} className={"insight i-" + f.type} style={{ "--i": i }}>
               <span className="ii" aria-hidden="true">{ICON[f.type]}</span>
               <div>
                 <p className="it">{f.title}</p>

@@ -42,7 +42,10 @@ Security headers (CSP, HSTS, anti-clickjacking, etc.) are set in `vercel.json`.
 - `src/gm-data.js` — baked offline fallback snapshot (regenerable)
 - `src/styles.css` — the design system: Apple light-mode colour tokens, and Liquid Glass used
   only on floating controls (toolbar, menu, chart tooltip), with reduced-transparency,
-  increased-contrast and reduced-motion fallbacks
+  increased-contrast and reduced-motion fallbacks. Motion uses Apple's sheet curve
+  (`--ease`): KPI figures count up, tiles rise in a stagger, lower sections ease in on
+  scroll, bars grow from the baseline, the donut sweeps, sparklines draw in and the
+  segmented-control thumb slides. Reduce Motion and print show everything at rest.
 - `public/` — favicons + social link-preview card
 - `assets/` — brand monogram + lockup
 - `scripts/refresh-snapshot.mjs` — snapshot regenerator
